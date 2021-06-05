@@ -14,7 +14,7 @@ class ReformerModel(object):
 
     def __init__(self,
                  dictionary: Dictionary,
-                 max_sequence_length=16384
+                 max_sequence_length=8192
                  ):
         self.dictionary = dictionary
         self.max_sequence_length = max_sequence_length
@@ -24,6 +24,7 @@ class ReformerModel(object):
     def train(self, x_train, epochs, stop_loss=0.1):
         start_time = time.time()
         for epoch in range(epochs):
+            print(f"Training epoch {epoch + 1}.")
             # when training, set return_loss equal to True
             self.model.train()
             loss = self.model(x_train, return_loss=True)

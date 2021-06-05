@@ -37,10 +37,13 @@ def run():
 
     # Create and train the model
     model = ReformerModel(dictionary)
-    model.train(x_train=training_data, epochs=100, stop_loss=0.1)
+
+    print("Created model. Starting training for 10 epochs.")
+    model.train(x_train=training_data, epochs=10, stop_loss=0.1)
 
     # Generate music
-    output = model.generate(30)
+    print("Generating music.")
+    output = model.generate(150)
 
     # Restore events from input data
     input_data_converter = InputDataConverter(dictionary)
@@ -48,8 +51,10 @@ def run():
     restored_events = WordsConverter.words_to_events(restored_words)
 
     # Restore midi from restored events
+    print("Writing midi.")
     midi_generator = MidiGenerator()
     restored_midi = midi_generator.events_to_midi(restored_events)
     MidiWriter.write_midi(restored_midi, "test.midi")
+
 
 run()
