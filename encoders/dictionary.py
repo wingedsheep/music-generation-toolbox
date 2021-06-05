@@ -9,3 +9,6 @@ class Dictionary(object):
 
     def data_to_word(self, data):
         return self.dtw[data]
+
+    def size(self):
+        return len(self.wtd)

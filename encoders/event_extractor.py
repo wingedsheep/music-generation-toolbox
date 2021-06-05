@@ -1,6 +1,6 @@
 from pretty_midi import PrettyMIDI
 
-from midi_converter.time_util import TimeUtil
+from encoders.time_util import TimeUtil
 
 
 class Event(object):

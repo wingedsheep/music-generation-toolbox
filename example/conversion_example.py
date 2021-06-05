@@ -1,11 +1,11 @@
 from pretty_midi import pretty_midi
 
-from midi_converter.dictionary_generator import DictionaryGenerator
-from midi_converter.event_extractor import EventExtractor
-from midi_converter.midi_generator import MidiGenerator
-from midi_converter.midi_writer import MidiWriter
-from midi_converter.words_converter import WordsConverter
-from midi_converter.input_data_converter import InputDataConverter
+from encoders.dictionary_generator import DictionaryGenerator
+from encoders.event_extractor import EventExtractor
+from encoders.midi_generator import MidiGenerator
+from encoders.midi_writer import MidiWriter
+from encoders.words_converter import WordsConverter
+from encoders.input_data_converter import InputDataConverter
 import os
 
 # Load MIDI
@@ -24,7 +24,6 @@ input_data = input_data_converter.words_to_input_data(words)
 # Restore events from input data
 restored_words = input_data_converter.input_data_to_words(input_data)
 restored_events = WordsConverter.words_to_events(restored_words)
-print(restored_words)
 
 # Restore midi from restored events
 midi_generator = MidiGenerator()

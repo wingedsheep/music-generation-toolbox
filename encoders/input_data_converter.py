@@ -1,6 +1,6 @@
 import string
 
-from midi_converter.dictionary import Dictionary
+from encoders.dictionary import Dictionary
 
 
 class InputDataConverter(object):

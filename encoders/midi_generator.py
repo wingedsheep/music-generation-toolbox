@@ -1,6 +1,6 @@
 import pretty_midi
 
-from midi_converter.event_extractor import Event
+from encoders.event_extractor import Event
 
 
 class MidiGenerator(object):

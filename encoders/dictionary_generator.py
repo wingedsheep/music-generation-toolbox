@@ -1,4 +1,4 @@
-from midi_converter.dictionary import Dictionary
+from encoders.dictionary import Dictionary
 
 
 class DictionaryGenerator(object):
@@ -16,6 +16,9 @@ class DictionaryGenerator(object):
                 offset = len(dictionary[0])
                 dictionary[0].update({word: offset})
                 dictionary[1].update({offset: word})
+
+        # First word is reserved for padding
+        append_to_dictionary("padding")
 
         append_to_dictionary("start-track")
         append_to_dictionary("end-track")
@@ -42,7 +45,7 @@ class DictionaryGenerator(object):
             append_to_dictionary(f"velocity_{i}")
 
         # Tempo is a value between 10-200 divided into bins of 5 (so 1-40)
-        for i in range(20):
-            append_to_dictionary(f"tempo_{i + 1}")
+        # for i in range(20):
+        #     append_to_dictionary(f"tempo_{i + 1}")
 
         return Dictionary(dictionary[0], dictionary[1])

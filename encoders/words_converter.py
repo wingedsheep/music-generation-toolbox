@@ -1,6 +1,6 @@
 import string
 
-from midi_converter.event_extractor import Event
+from encoders.event_extractor import Event
 
 
 class WordsConverter(object):
