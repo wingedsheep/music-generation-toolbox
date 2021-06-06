@@ -39,11 +39,11 @@ def run():
     model = ReformerModel(dictionary)
 
     print("Created model. Starting training for 10 epochs.")
-    model.train(x_train=training_data, epochs=10, stop_loss=0.1)
+    model.train(x_train=training_data, epochs=4, stop_loss=0.1)
 
     # Generate music
     print("Generating music.")
-    output = model.generate(150)
+    output = model.generate(100)
 
     # Restore events from input data
     input_data_converter = InputDataConverter(dictionary)
