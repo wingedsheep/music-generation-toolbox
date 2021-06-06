@@ -45,12 +45,12 @@ class ReformerModel(object):
     def create_model(self):
         model = ReformerLM(
             num_tokens=self.dictionary.size() + 1,
-            dim=1024,
+            dim=512,
             depth=12,
             max_seq_len=self.max_sequence_length,
             lsh_dropout=0.1,
             causal=True,
-            full_attn_thres=1024
+            full_attn_thres=512
         )
 
         # 0 is used for padding and no loss to be calculated on it
