@@ -42,8 +42,8 @@ class WordsConverter(object):
     def words_to_events(words: [string]):
         events = []
         current_time = 0
-        current_instrument = None
-        current_velocity = None
+        current_instrument = 0
+        current_velocity = 60
         for index in range(len(words)):
             word = words[index]
             if "time-shift" in word:
