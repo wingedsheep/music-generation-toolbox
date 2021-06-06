@@ -1,13 +1,26 @@
 from datetime import time
 
+import numpy as np
 import torch
-from torch import randint
+import random
 import time
 
 from reformer_pytorch import ReformerLM
 from reformer_pytorch.generative_tools import TrainingWrapper
 
 from encoders.dictionary import Dictionary
+
+
+def create_batch(iterable, n=1):
+    array_length = len(iterable)
+    for ndx in range(0, array_length, n):
+        yield iterable[ndx:min(ndx + n, array_length)]
+
+
+def get_batches(x_train, batch_size):
+    new_list = x_train.copy()
+    random.shuffle(new_list)
+    return create_batch(new_list, batch_size)
 
 
 class ReformerModel(object):
@@ -21,21 +34,29 @@ class ReformerModel(object):
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
-    def train(self, x_train, epochs, stop_loss=0.1):
+    def train(self, x_train, epochs, batch_size=4, stop_loss=0.1):
         start_time = time.time()
         for epoch in range(epochs):
             print(f"Training epoch {epoch + 1}.")
-            # when training, set return_loss equal to True
-            self.model.train()
-            loss = self.model(x_train, return_loss=True)
-            loss.backward()
-            self.optimizer.step()
-            loss_item = loss.item()
-            if loss_item <= stop_loss:
-                print(f"Loss of {loss_item} was lower than stop loss of {stop_loss}. Stopping training.")
+            batches = get_batches(x_train, batch_size)
+            epoch_losses = []
+            for batch in batches:
+                # when training, set return_loss equal to True
+                self.model.train()
+                loss = self.model(batch, return_loss=True)
+                loss.backward()
+                self.optimizer.step()
+                loss_item = loss.item()
+                epoch_losses.append(loss_item)
+                print(f"Batch loss is {loss_item}.")
+
+            epoch_loss = np.mean(epoch_losses)
+            if epoch_loss <= stop_loss:
+                print(f"Loss of {epoch_loss} was lower than stop loss of {stop_loss}. Stopping training.")
                 return
-            running_time = (time.time() - start_time) / 1000
-            print(f"Loss after epoch {epoch + 1} is {loss.item()}. Running time: {running_time}")
+
+            running_time = (time.time() - start_time)
+            print(f"Loss after epoch {epoch + 1} is {epoch_loss}. Running time: {running_time}")
 
     def generate(self, output_length=100):
         initial = torch.tensor([[0]]).long()  # assume 0 is start token
