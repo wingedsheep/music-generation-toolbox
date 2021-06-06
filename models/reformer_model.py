@@ -59,6 +59,7 @@ class ReformerModel(object):
             print(f"Loss after epoch {epoch + 1} is {epoch_loss}. Running time: {running_time}")
 
     def generate(self, output_length=100):
+        self.model.eval()
         initial = torch.tensor([[0]]).long()  # assume 0 is start token
         sample = self.model.generate(initial, output_length, temperature=1., filter_thres=0.9)
         return sample.cpu().detach().numpy()[0]
