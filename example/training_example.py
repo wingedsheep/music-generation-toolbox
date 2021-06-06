@@ -38,7 +38,7 @@ def run():
     # Create and train the model
     model = ReformerModel(dictionary)
 
-    print("Created model. Starting training for 10 epochs.")
+    print("Created model. Starting training for 4 epochs.")
     model.train(x_train=training_data, epochs=4, stop_loss=0.1)
 
     # Generate music
