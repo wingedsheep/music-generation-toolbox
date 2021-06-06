@@ -61,7 +61,7 @@ class ReformerModel(object):
     def generate(self, output_length=100):
         initial = torch.tensor([[0]]).long()  # assume 0 is start token
         sample = self.model.generate(initial, output_length, temperature=1., filter_thres=0.9)
-        return sample.cpu().detach().numpy()
+        return sample.cpu().detach().numpy()[0]
 
     def create_model(self):
         model = ReformerLM(
