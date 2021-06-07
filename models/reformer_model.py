@@ -38,8 +38,8 @@ class ReformerModel(object):
 
             new_list = x_train.copy()
             random.shuffle(new_list)
-            print(len(new_list))
-            flattened = np.array(new_list).flatten()
+            print(f"Number of midis: {len(new_list)}")
+            flattened = np.array(new_list, dtype='int64').flatten()
             chunks = list(create_chunks(flattened, chunk_size=self.max_sequence_length))
             batches = list(create_chunks(chunks, chunk_size=batch_size))
             print(f"Number of batches: {len(batches)}")
