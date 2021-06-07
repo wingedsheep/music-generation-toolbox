@@ -11,16 +11,10 @@ from reformer_pytorch.generative_tools import TrainingWrapper
 from encoders.dictionary import Dictionary
 
 
-def create_batch(iterable, n=1):
+def create_chunks(iterable, chunk_size=1):
     array_length = len(iterable)
-    for ndx in range(0, array_length, n):
-        yield iterable[ndx:min(ndx + n, array_length)]
-
-
-def get_batches(x_train, batch_size):
-    new_list = x_train.copy()
-    random.shuffle(new_list)
-    return list(create_batch(new_list, batch_size))
+    for ndx in range(0, array_length, chunk_size):
+        yield iterable[ndx:min(ndx + chunk_size, array_length)]
 
 
 class ReformerModel(object):
@@ -41,17 +35,19 @@ class ReformerModel(object):
         start_time = time.time()
         for epoch in range(epochs):
             print(f"Training epoch {epoch + 1}.")
-            batches = get_batches(x_train, batch_size)
+
+            new_list = x_train.copy()
+            random.shuffle(new_list)
+            flattened = new_list.flatten()
+            chunks = list(create_chunks(flattened, chunk_size=self.max_sequence_length))
+            batches = create_chunks(chunks, chunk_size=batch_size)
+
             epoch_losses = []
             for batch in batches:
                 # when training, set return_loss equal to True
                 batch = [x.long().cuda() for x in batch]
-
-                loss = None
-
-                for item in batch:
-                    loss = self.model(item, return_loss=True)
-                    loss.backward()
+                loss = self.model(batch, return_loss=True)
+                loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
                 self.optimizer.step()

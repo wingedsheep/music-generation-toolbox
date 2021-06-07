@@ -31,7 +31,7 @@ def run():
         words = WordsConverter.events_to_words(events)
         input_data_converter = InputDataConverter(dictionary)
         input_data = input_data_converter.words_to_input_data(words)
-        training_data.append(torch.tensor(input_data))
+        training_data.append(input_data)
 
     print(training_data)
 
