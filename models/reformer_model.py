@@ -61,14 +61,14 @@ class ReformerModel(object):
 
     def generate(self, output_length=100):
         self.model.eval()
-        initial = torch.tensor([[0]]).long()  # assume 0 is start token
+        initial = torch.tensor([[0]]).long().cuda()  # assume 0 is start token
         sample = self.model.generate(initial, output_length, temperature=1., filter_thres=0.9)
         return sample.cpu().detach().numpy()[0]
 
     def create_model(self):
         model = ReformerLM(
             num_tokens=self.dictionary.size() + 1,
-            dim=512,
+            dim=1024,
             depth=12,
             max_seq_len=self.max_sequence_length,
             lsh_dropout=0.1,
