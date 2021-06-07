@@ -46,11 +46,17 @@ class ReformerModel(object):
             for batch in batches:
                 # when training, set return_loss equal to True
                 batch = [x.long().cuda() for x in batch]
-                loss = self.model(batch, return_loss=True)
-                loss.backward()
+
+                loss = None
+
+                for item in batch:
+                    loss = self.model(item, return_loss=True)
+                    loss.backward()
+
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
                 self.optimizer.step()
                 self.optimizer.zero_grad()
+
                 loss_item = loss.item()
                 epoch_losses.append(loss_item)
                 print(f"Batch loss is {loss_item}.")
@@ -78,10 +84,10 @@ class ReformerModel(object):
             lsh_dropout=0.1,
             causal=True,
             full_attn_thres=512
-        ).cuda()
+        )
 
         # 0 is used for padding and no loss to be calculated on it
-        return TrainingWrapper(model, ignore_index=0, pad_value=0)
+        return TrainingWrapper(model, ignore_index=0, pad_value=0).cuda()
 
     def create_optimizer(self):
         return torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
