@@ -23,6 +23,7 @@ def run():
     dictionary = DictionaryGenerator.create_dictionary()
     training_data = []
     for midi in midis:
+        print(f"preparing data for {midi}")
         midi_data = pretty_midi.PrettyMIDI(midi)
 
         # Extract data from midi and convert to input data
