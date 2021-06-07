@@ -38,7 +38,7 @@ class ReformerModel(object):
 
             new_list = x_train.copy()
             random.shuffle(new_list)
-            flattened = new_list.flatten()
+            flattened = np.array(new_list).flatten()
             chunks = list(create_chunks(flattened, chunk_size=self.max_sequence_length))
             batches = create_chunks(chunks, chunk_size=batch_size)
 
