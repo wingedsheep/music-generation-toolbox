@@ -40,7 +40,8 @@ class ReformerModel(object):
             random.shuffle(new_list)
             flattened = np.array(new_list).flatten()
             chunks = list(create_chunks(flattened, chunk_size=self.max_sequence_length))
-            batches = create_chunks(chunks, chunk_size=batch_size)
+            batches = list(create_chunks(chunks, chunk_size=batch_size))
+            print(f"Number of batches: {len(batches)}")
 
             epoch_losses = []
             for batch in batches:
