@@ -38,7 +38,7 @@ class ReformerModel(object):
 
             new_list = x_train.copy()
             random.shuffle(new_list)
-            flattened = np.array(new_list).flatten()
+            flattened = np.array(new_list, dtype='int64').flatten()
             chunks = list(create_chunks(flattened, chunk_size=self.max_sequence_length))
             batches = list(create_chunks(chunks, chunk_size=batch_size))
             print(f"Number of batches: {len(batches)}")
@@ -46,7 +46,7 @@ class ReformerModel(object):
             epoch_losses = []
             for batch in batches:
                 # when training, set return_loss equal to True
-                batch = [torch.tensor(x).long().cuda() for x in batch]
+                batch = [torch.from_numpy(x).long().cuda() for x in batch]
                 loss = self.model(batch, return_loss=True)
                 loss.backward()
 
