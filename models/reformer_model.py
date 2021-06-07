@@ -35,6 +35,7 @@ class ReformerModel(object):
         self.optimizer = self.create_optimizer()
 
     def train(self, x_train, epochs, batch_size=4, stop_loss=0.1):
+        self.model.train()
         start_time = time.time()
         for epoch in range(epochs):
             print(f"Training epoch {epoch + 1}.")
@@ -42,7 +43,7 @@ class ReformerModel(object):
             epoch_losses = []
             for batch in batches:
                 # when training, set return_loss equal to True
-                self.model.train()
+                batch = [x.long().cuda() for x in batch]
                 loss = self.model(batch, return_loss=True)
                 loss.backward()
                 self.optimizer.step()
@@ -73,7 +74,7 @@ class ReformerModel(object):
             lsh_dropout=0.1,
             causal=True,
             full_attn_thres=512
-        )
+        ).cuda()
 
         # 0 is used for padding and no loss to be calculated on it
         return TrainingWrapper(model, ignore_index=0, pad_value=0)
