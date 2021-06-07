@@ -20,17 +20,19 @@ def create_batch(iterable, n=1):
 def get_batches(x_train, batch_size):
     new_list = x_train.copy()
     random.shuffle(new_list)
-    return create_batch(new_list, batch_size)
+    return list(create_batch(new_list, batch_size))
 
 
 class ReformerModel(object):
 
     def __init__(self,
                  dictionary: Dictionary,
-                 max_sequence_length=8192
+                 max_sequence_length=8192,
+                 learning_rate=1e-3
                  ):
         self.dictionary = dictionary
         self.max_sequence_length = max_sequence_length
+        self.learning_rate = learning_rate
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
@@ -80,4 +82,4 @@ class ReformerModel(object):
         return TrainingWrapper(model, ignore_index=0, pad_value=0)
 
     def create_optimizer(self):
-        return torch.optim.Adam(self.model.parameters(), lr=1e-3)
+        return torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
