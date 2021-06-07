@@ -47,7 +47,7 @@ class ReformerModel(object):
                 # when training, set return_loss equal to True
                 batch = [x.long().cuda() for x in batch]
                 loss = self.model(batch, return_loss=True)
-                loss.backward()
+                loss.sum().backward()
                 self.optimizer.step()
                 loss_item = loss.item()
                 epoch_losses.append(loss_item)
