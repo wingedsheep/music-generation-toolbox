@@ -47,8 +47,10 @@ class ReformerModel(object):
                 # when training, set return_loss equal to True
                 batch = [x.long().cuda() for x in batch]
                 loss = self.model(batch, return_loss=True)
-                loss.sum().backward()
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
                 self.optimizer.step()
+                self.optimizer.zero_grad()
                 loss_item = loss.item()
                 epoch_losses.append(loss_item)
                 print(f"Batch loss is {loss_item}.")
