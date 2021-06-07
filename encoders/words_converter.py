@@ -61,7 +61,7 @@ class WordsConverter(object):
                 program = current_instrument
                 velocity = current_velocity
                 duration = 0
-                while "duration" in words[index + 1]:
+                while index < len(words) - 1 and "duration" in words[index + 1]:
                     index += 1
                     word = words[index]
                     extracted_duration = int(word.split("_")[1])
