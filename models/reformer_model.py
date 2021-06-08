@@ -59,6 +59,8 @@ class ReformerModel(object):
                 epoch_losses.append(loss_item)
                 print(f"Batch loss is {loss_item}.")
 
+            self.save_model('model.pth')
+
             epoch_loss = np.mean(epoch_losses)
             if epoch_loss <= stop_loss:
                 print(f"Loss of {epoch_loss} was lower than stop loss of {stop_loss}. Stopping training.")
@@ -89,3 +91,17 @@ class ReformerModel(object):
 
     def create_optimizer(self):
         return torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+
+    def save_model(self, path):
+        checkpoint = {'state_dict': self.model.state_dict(), 'optimizer': self.optimizer.state_dict()}
+        if path.endswith("_sd_opt.pth"):
+            torch.save(checkpoint, path + "_sd_opt.pth")
+        else:
+            torch.save(checkpoint, path + "_sd_opt.pth")
+
+    def load_model(self, path):
+        if path.endswith("_sd_opt.pth"):
+            torch.load(path)
+        else:
+            torch.load(path + "_sd_opt.pth")
+        self.model.eval()
