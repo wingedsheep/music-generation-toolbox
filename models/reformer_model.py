@@ -59,7 +59,7 @@ class ReformerModel(object):
                 epoch_losses.append(loss_item)
                 print(f"Batch loss is {loss_item}.")
 
-            self.save_model('model.pth')
+            self.save_model(f'model_{epoch}')
 
             epoch_loss = np.mean(epoch_losses)
             if epoch_loss <= stop_loss:
