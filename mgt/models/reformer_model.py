@@ -21,12 +21,20 @@ class ReformerModel(object):
 
     def __init__(self,
                  dictionary: Dictionary,
-                 max_sequence_length=8192,
-                 learning_rate=1e-3
+                 max_sequence_length=2048,
+                 learning_rate=1e-3,
+                 full_attn_thres=512,
+                 lsh_dropout=0.1,
+                 depth=12,
+                 dim=1024
                  ):
         self.dictionary = dictionary
         self.max_sequence_length = max_sequence_length
         self.learning_rate = learning_rate
+        self.full_attn_thres = full_attn_thres
+        self.lsh_dropout = lsh_dropout
+        self.depth = depth
+        self.dim = dim
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
@@ -81,12 +89,12 @@ class ReformerModel(object):
     def create_model(self):
         model = ReformerLM(
             num_tokens=self.dictionary.size() + 1,
-            dim=1024,
-            depth=12,
+            dim=self.dim,
+            depth=self.depth,
             max_seq_len=self.max_sequence_length,
-            lsh_dropout=0.1,
+            lsh_dropout=self.lsh_dropout,
             causal=True,
-            full_attn_thres=512
+            full_attn_thres=self.full_attn_thres
         )
 
         # 0 is used for padding and no loss to be calculated on it
