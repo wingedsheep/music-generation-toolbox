@@ -1,61 +1,35 @@
-import torch
-from pretty_midi import pretty_midi
-
-from encoders.dictionary_generator import DictionaryGenerator
-from encoders.event_extractor import EventExtractor
-from encoders.midi_generator import MidiGenerator
-from encoders.midi_writer import MidiWriter
-from encoders.words_converter import WordsConverter
-from encoders.input_data_converter import InputDataConverter
+from mgt.datamanagers.time_shift_data_manager import TimeShiftDataManager
 import os
 import glob
 
 # Load MIDI files
-from models.reformer_model import ReformerModel
+from mgt.models.reformer_model import ReformerModel
 
 
 def run():
+    """
+    Example showing how we can train a new model and generate new music with it.
+    """
+
     midi_path = '../data/pop/'
     midi_path = os.path.join(os.path.dirname(__file__), midi_path)
     midis = glob.glob(midi_path + '*.mid')
 
-    # Convert MIDI files to training data
-    dictionary = DictionaryGenerator.create_dictionary()
-    training_data = []
-    for midi in midis:
-        print(f"preparing data for {midi}")
-        midi_data = pretty_midi.PrettyMIDI(midi)
+    time_shift_data_manager = TimeShiftDataManager()
+    dataset = time_shift_data_manager.prepare_data(midis)
 
-        # Extract data from midi and convert to input data
-        event_extractor = EventExtractor()
-        events = event_extractor.extract_events(midi_data)
-        words = WordsConverter.events_to_words(events)
-        input_data_converter = InputDataConverter(dictionary)
-        input_data = input_data_converter.words_to_input_data(words)
-        training_data.append(input_data)
-
-    print(training_data)
-
-    # Create and train the model
-    model = ReformerModel(dictionary)
+    model = ReformerModel(dataset.dictionary)
 
     print("Created model. Starting training for 4 epochs.")
-    model.train(x_train=training_data, epochs=4, stop_loss=0.1)
+    model.train(x_train=dataset.data, epochs=4, stop_loss=0.1)
 
     # Generate music
     print("Generating music.")
     output = model.generate(100)
 
     # Restore events from input data
-    input_data_converter = InputDataConverter(dictionary)
-    restored_words = input_data_converter.input_data_to_words(output)
-    restored_events = WordsConverter.words_to_events(restored_words)
-
-    # Restore midi from restored events
-    print("Writing midi.")
-    midi_generator = MidiGenerator()
-    restored_midi = midi_generator.events_to_midi(restored_events)
-    MidiWriter.write_midi(restored_midi, "test.midi")
+    midi = time_shift_data_manager.to_midi(output)
+    midi.save("result.midi")
 
 
 run()

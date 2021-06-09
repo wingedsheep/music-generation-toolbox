@@ -1,6 +1,6 @@
 import string
 
-from encoders.dictionary import Dictionary
+from mgt.datamanagers.data_manager import Dictionary
 
 
 class InputDataConverter(object):

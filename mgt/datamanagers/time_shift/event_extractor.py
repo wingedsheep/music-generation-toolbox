@@ -1,6 +1,6 @@
 from pretty_midi import PrettyMIDI
 
-from encoders.time_util import TimeUtil
+from mgt.datamanagers.time_shift.time_util import TimeUtil
 
 
 class Event(object):
@@ -15,7 +15,7 @@ class Event(object):
 
 
 def event_type_sorting(event_type):
-    if event_type == "bar":
+    if event_type == "start-track":
         return 0
     elif event_type == "note":
         return 1
@@ -51,6 +51,7 @@ class EventExtractor(object):
         all_events = []
         all_events.extend(self.extract_notes(midi_data, time_bins))
         all_events.sort(key=lambda x: x.start)
+        all_events.insert(0, Event(event_type="start-track", start=0, data={}))
         all_events.extend(self.create_time_shift_events(all_events))
         all_events.sort(key=lambda x: (
             x.start,
@@ -58,7 +59,6 @@ class EventExtractor(object):
             program_sort(x),
             velocity_sort(x)
         ))
-        all_events.insert(0, Event(event_type="start-track", start=0, data={}))
         all_events.append(Event(event_type="end-track", start=all_events[len(all_events) - 1].start, data={}))
         return all_events
 
@@ -76,7 +76,7 @@ class EventExtractor(object):
                     data={
                         "program": program,
                         "velocity": int(note.velocity / 4),
-                        "duration": end - start,
+                        "duration": max(end - start, 1),
                         "pitch": note.pitch
                     }
                 ))

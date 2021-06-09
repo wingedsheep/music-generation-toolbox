@@ -1,6 +1,6 @@
 import string
 
-from encoders.event_extractor import Event
+from mgt.datamanagers.time_shift.event_extractor import Event
 
 
 class WordsConverter(object):
@@ -46,8 +46,27 @@ class WordsConverter(object):
         current_velocity = 12
         for index in range(len(words)):
             word = words[index]
-            if "time-shift" in word:
+            if "start-track" in word:
+                events.append(Event(
+                    event_type="start-track",
+                    start=current_time,
+                    data={}
+                ))
+            elif "end-track" in word:
+                events.append(Event(
+                    event_type="end-track",
+                    start=current_time,
+                    data={}
+                ))
+            elif "time-shift" in word:
                 duration = int(word.split("_")[1])
+                events.append(Event(
+                    event_type="time-shift",
+                    start=current_time,
+                    data={
+                        "duration": duration
+                    }
+                ))
                 current_time += duration
             elif "program" in word:
                 program = int(word.split("_")[1])

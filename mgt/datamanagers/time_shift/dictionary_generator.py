@@ -1,4 +1,4 @@
-from encoders.dictionary import Dictionary
+from mgt.datamanagers.data_manager import Dictionary
 
 
 class DictionaryGenerator(object):
