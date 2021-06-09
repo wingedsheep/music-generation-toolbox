@@ -46,7 +46,11 @@ class ReformerModel(object):
 
             new_list = x_train.copy()
             random.shuffle(new_list)
-            batches = list(create_chunks(new_list, chunk_size=batch_size))
+
+            print(f"Number of midis: {len(new_list)}")
+            flat_list = [item for sublist in new_list for item in sublist]
+            chunks = list(create_chunks(flat_list, chunk_size=self.max_sequence_length))
+            batches = list(create_chunks(chunks, chunk_size=batch_size))
             print(f"Number of batches: {len(batches)}")
 
             epoch_losses = []
