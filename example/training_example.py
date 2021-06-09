@@ -1,9 +1,8 @@
 from mgt.datamanagers.time_shift_data_manager import TimeShiftDataManager
+from mgt.models.reformer_model import ReformerModel
+
 import os
 import glob
-
-# Load MIDI files
-from mgt.models.reformer_model import ReformerModel
 
 
 def run():
@@ -20,12 +19,12 @@ def run():
 
     model = ReformerModel(dataset.dictionary)
 
-    print("Created model. Starting training for 4 epochs.")
-    model.train(x_train=dataset.data, epochs=4, stop_loss=0.1)
+    print("Created model. Starting training for 50 epochs.")
+    model.train(x_train=dataset.data, epochs=50, stop_loss=0.1)
 
     # Generate music
     print("Generating music.")
-    output = model.generate(100)
+    output = model.generate(1000)
 
     # Restore events from input data
     midi = time_shift_data_manager.to_midi(output)
