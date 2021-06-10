@@ -1,6 +1,3 @@
-import miditoolkit
-from pretty_midi import pretty_midi
-
 from mgt.datamanagers.midi_wrapper import MidiWrapper
 
 
