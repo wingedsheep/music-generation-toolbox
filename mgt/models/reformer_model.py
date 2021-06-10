@@ -56,8 +56,7 @@ class ReformerModel(object):
             epoch_losses = []
             for batch in batches:
                 # when training, set return_loss equal to True
-                batch = [torch.tensor(x).long().cuda() for x in batch] if torch.cuda.is_available() \
-                    else [torch.tensor(x).long() for x in batch]
+                batch = [torch.tensor(x).long().cuda() for x in batch]
 
                 loss = self.model(batch, return_loss=True)
                 loss.backward()
@@ -80,9 +79,7 @@ class ReformerModel(object):
 
     def generate(self, output_length=100):
         self.model.eval()
-        initial = torch.tensor([[0]]).long()  # assume 0 is start token
-        if torch.cuda.is_available():
-            initial.cuda()
+        initial = torch.tensor([[0]]).long().cuda()  # assume 0 is start token
 
         sample = self.model.generate(initial, output_length, temperature=1., filter_thres=0.9)
         return sample.cpu().detach().numpy()[0]
@@ -99,9 +96,7 @@ class ReformerModel(object):
         )
 
         # 0 is used for padding and no loss to be calculated on it
-        training_wrapper = TrainingWrapper(model, ignore_index=0, pad_value=0)
-        if torch.cuda.is_available():
-            training_wrapper.cuda()
+        training_wrapper = TrainingWrapper(model, ignore_index=0, pad_value=0).cuda()
         return training_wrapper
 
     def create_optimizer(self):
