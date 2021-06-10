@@ -56,7 +56,7 @@ class ReformerModel(object):
             epoch_losses = []
             for batch in batches:
                 # when training, set return_loss equal to True
-                batch = torch.tensor(batch).long().cuda()
+                batch = [torch.tensor(x).long().cuda() for x in batch]
 
                 loss = self.model(batch, return_loss=True)
                 loss.backward()
