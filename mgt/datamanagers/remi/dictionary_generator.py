@@ -18,7 +18,9 @@ class DictionaryGenerator(object):
                 dictionary[1].update({offset: word})
 
         # First word is reserved for padding
-        append_to_dictionary("padding")
+        append_to_dictionary("pad")
+        append_to_dictionary("mask")
+
         append_to_dictionary('Bar_None')
 
         chords = ['Chord_A#:aug', 'Chord_A#:dim', 'Chord_A#:dom', 'Chord_A#:maj', 'Chord_A#:min', 'Chord_A:aug',

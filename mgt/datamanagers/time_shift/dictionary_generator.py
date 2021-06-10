@@ -18,7 +18,8 @@ class DictionaryGenerator(object):
                 dictionary[1].update({offset: word})
 
         # First word is reserved for padding
-        append_to_dictionary("padding")
+        append_to_dictionary("pad")
+        append_to_dictionary("mask")
 
         append_to_dictionary("start-track")
         append_to_dictionary("end-track")
