@@ -61,22 +61,23 @@ class ReformerModel(object):
                 # when training, set return_loss equal to True
                 batch = [torch.tensor(x).long().cuda() for x in batch]
 
-                loss = self.trainer(batch, return_loss=True)
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
-                self.optimizer.step()
-                self.optimizer.zero_grad()
+                for item in batch:
+                    loss = self.trainer(item, return_loss=True)
+                    loss.backward()
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
+                    self.optimizer.step()
+                    self.optimizer.zero_grad()
 
-                # loss = self.model(batch, return_loss=True)
-                # loss.backward()
-                #
-                # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
-                # self.optimizer.step()
-                # self.optimizer.zero_grad()
+                    # loss = self.model(batch, return_loss=True)
+                    # loss.backward()
+                    #
+                    # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
+                    # self.optimizer.step()
+                    # self.optimizer.zero_grad()
 
-                loss_item = loss.item()
-                epoch_losses.append(loss_item)
-                print(f"Batch loss is {loss_item}.")
+                    loss_item = loss.item()
+                    epoch_losses.append(loss_item)
+                    print(f"Batch loss is {loss_item}.")
 
             epoch_loss = np.mean(epoch_losses)
             if epoch_loss <= stop_loss:
