@@ -2,7 +2,6 @@ from datetime import time
 
 import numpy as np
 import torch
-import random
 import time
 
 from reformer_pytorch import ReformerLM
@@ -15,6 +14,15 @@ def create_chunks(iterable, chunk_size=1):
     array_length = len(iterable)
     for ndx in range(0, array_length, chunk_size):
         yield iterable[ndx:min(ndx + chunk_size, array_length)]
+
+def create_sequences(training_data, max_sequence_length, padding_character=0):
+    sequences = []
+    for song in training_data:
+        padded_song = list(np.repeat([padding_character], max_sequence_length)) + song
+        for i in range(len(padded_song) - max_sequence_length):
+            sequence = padded_song[i: i + max_sequence_length]
+            sequences.append(sequence)
+    return sequences
 
 
 class ReformerModel(object):
@@ -38,36 +46,40 @@ class ReformerModel(object):
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
-    def train(self, x_train, epochs, batch_size=4, stop_loss=0.1):
+    def train(self, x_train, epochs, batch_size=8, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=20):
         self.model.train()
         start_time = time.time()
+        sequences = create_sequences(x_train, self.max_sequence_length)
         for epoch in range(epochs):
             print(f"Training epoch {epoch + 1}.")
 
-            new_list = x_train.copy()
-            random.shuffle(new_list)
-
-            print(f"Number of midis: {len(new_list)}")
-            flat_list = [item for sublist in new_list for item in sublist]
-            chunks = list(create_chunks(flat_list, chunk_size=self.max_sequence_length))
-            batches = list(create_chunks(chunks, chunk_size=batch_size))
-            print(f"Number of batches: {len(batches)}")
+            indices = np.random.randint(0, len(sequences), batch_size * batches_per_epoch)
+            batches = list(create_chunks(np.array(sequences)[indices], chunk_size=batch_size))
 
             epoch_losses = []
+            batch_losses = []
+            nr_of_batches_processed = 0
             for batch in batches:
                 # when training, set return_loss equal to True
-                batch = [torch.tensor(x).long().cuda() for x in batch]
+                batch = torch.tensor(batch).long().cuda()
 
-                loss = self.model(batch, return_loss=True)
+                loss = self.model(batch)
                 loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
                 self.optimizer.step()
                 self.optimizer.zero_grad()
 
+                nr_of_batches_processed += 1
+
                 loss_item = loss.item()
+
+                batch_losses.append(loss_item)
                 epoch_losses.append(loss_item)
-                print(f"Batch loss is {loss_item}.")
+
+                if nr_of_batches_processed % report_per_x_batches == 0:
+                    print(f"Processed {nr_of_batches_processed} / {len(batches)} with loss {np.mean(batch_losses)}.")
+                    batch_losses = []
 
             epoch_loss = np.mean(epoch_losses)
             if epoch_loss <= stop_loss:

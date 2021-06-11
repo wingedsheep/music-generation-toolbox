@@ -113,7 +113,11 @@ class TransformerModel(object):
                 attn_dropout=dropout,  # dropout post-attention
                 ff_dropout=dropout  # feedforward dropout
             )
-        )).cuda()
+        ),
+            ignore_index=0,
+            pad_value=0
+
+        ).cuda()
 
         return model
 
