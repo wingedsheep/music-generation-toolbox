@@ -47,7 +47,7 @@ class ReformerModel(object):
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
-    def train(self, x_train, epochs, batch_size=8, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=20):
+    def train(self, x_train, epochs, batch_size=8, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=5):
         self.model.train()
         start_time = time.time()
         sequences = create_sequences(x_train, self.max_sequence_length)
