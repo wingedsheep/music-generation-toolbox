@@ -69,7 +69,7 @@ class EventExtractor(object):
             for note in instrument.notes:
                 program = 128 if instrument.is_drum else instrument.program
                 start = TimeUtil.time_to_time_bin(time_bins, note.start)
-                end = TimeUtil.time_to_time_bin(time_bins, note.end)
+                end = TimeUtil.time_to_time_bin(time_bins, note.end) + 1
                 events.append(Event(
                     event_type="note",
                     start=TimeUtil.time_to_time_bin(time_bins, note.start),
