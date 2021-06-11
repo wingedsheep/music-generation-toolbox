@@ -59,7 +59,7 @@ class TransformerModel(object):
             print(f"Training epoch {epoch + 1}.")
 
             indices = np.random.randint(0, len(sequences), batch_size * batches_per_epoch)
-            batches = list(create_chunks(sequences[indices], chunk_size=batch_size))
+            batches = list(create_chunks(np.array(sequences)[indices], chunk_size=batch_size))
 
             epoch_losses = []
             batch_losses = []
