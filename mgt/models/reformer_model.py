@@ -5,8 +5,6 @@ import torch
 import random
 import time
 
-from mlm_pytorch import MLM
-
 from reformer_pytorch import ReformerLM
 from reformer_pytorch.generative_tools import TrainingWrapper
 
@@ -38,7 +36,6 @@ class ReformerModel(object):
         self.depth = depth
         self.dim = dim
         self.model = self.create_model()
-        self.trainer = self.create_trainer()
         self.optimizer = self.create_optimizer()
 
     def train(self, x_train, epochs, batch_size=4, stop_loss=0.1):
@@ -61,23 +58,16 @@ class ReformerModel(object):
                 # when training, set return_loss equal to True
                 batch = [torch.tensor(x).long().cuda() for x in batch]
 
-                for item in batch:
-                    loss = self.trainer(item, return_loss=True)
-                    loss.backward()
-                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
-                    self.optimizer.step()
-                    self.optimizer.zero_grad()
+                loss = self.model(batch, return_loss=True)
+                loss.backward()
 
-                    # loss = self.model(batch, return_loss=True)
-                    # loss.backward()
-                    #
-                    # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
-                    # self.optimizer.step()
-                    # self.optimizer.zero_grad()
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
+                self.optimizer.step()
+                self.optimizer.zero_grad()
 
-                    loss_item = loss.item()
-                    epoch_losses.append(loss_item)
-                    print(f"Batch loss is {loss_item}.")
+                loss_item = loss.item()
+                epoch_losses.append(loss_item)
+                print(f"Batch loss is {loss_item}.")
 
             epoch_loss = np.mean(epoch_losses)
             if epoch_loss <= stop_loss:
@@ -125,14 +115,3 @@ class ReformerModel(object):
         else:
             torch.load(path + "_sd_opt.pth")
         self.model.eval()
-
-    def create_trainer(self):
-        return MLM(
-            self.model,
-            mask_token_id=1,  # the token id reserved for masking
-            pad_token_id=0,  # the token id for padding
-            mask_prob=0.15,  # masking probability for masked language modeling
-            replace_prob=0.90,
-            # ~10% probability that token will not be masked, but included in loss, as detailed in the epaper
-            mask_ignore_token_ids=[]  # other tokens to exclude from masking, include the [cls] and [sep] here
-        ).cuda()
