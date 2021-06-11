@@ -38,8 +38,8 @@ def pad_training_data(training_data, max_sequence_length, padding_character=0):
 def get_batches(padded_training_data, batches_per_epoch, batch_size, max_sequence_length):
     indices = []
     for i in range(batches_per_epoch * batch_size):
-        song_index = random.randint(0, len(padded_training_data))
-        starting_index = random.randint(0, len(padded_training_data[song_index]) - max_sequence_length)
+        song_index = random.randint(0, len(padded_training_data) - 1)
+        starting_index = random.randint(0, len(padded_training_data[song_index]) - max_sequence_length - 1)
         indices.append((song_index, starting_index))
 
     sequences = []
