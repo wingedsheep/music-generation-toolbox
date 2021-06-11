@@ -11,4 +11,4 @@ Great transformers implementations from lucidrains
 * https://github.com/lucidrains/x-transformers
 
 Pop music transformer and REMI format
-https://github.com/YatingMusic/remi
+* https://github.com/YatingMusic/remi
