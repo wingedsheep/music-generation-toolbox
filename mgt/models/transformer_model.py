@@ -66,9 +66,9 @@ class TransformerModel(object):
             nr_of_batches_processed = 0
             for batch in batches:
                 # when training, set return_loss equal to True
-                batch = torch.tensor(batch).long().cuda()
+                torch_batch = torch.tensor(batch).long().cuda()
 
-                loss = self.model(batch)
+                loss = self.model(torch_batch)
                 loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)

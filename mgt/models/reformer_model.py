@@ -65,7 +65,9 @@ class ReformerModel(object):
             nr_of_batches_processed = 0
             for batch in batches:
                 # when training, set return_loss equal to True
-                loss = self.model(torch.tensor(batch).long().cuda(), return_loss=True)
+                torch_batch = [torch.tensor(x).long().cuda() for x in batch]
+
+                loss = self.model(torch_batch, return_loss=True)
                 loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
@@ -99,7 +101,7 @@ class ReformerModel(object):
         return sample.cpu().detach().numpy()[0]
 
     def create_model(self):
-        model = TrainingWrapper(ReformerLM(
+        model = ReformerLM(
             num_tokens=self.dictionary.size() + 1,
             dim=self.dim,
             depth=self.depth,
@@ -108,7 +110,7 @@ class ReformerModel(object):
             causal=True,
             full_attn_thres=self.full_attn_thres,
             heads=self.heads
-        ))
+        )
 
         # 0 is used for padding and no loss to be calculated on it
         training_wrapper = AutoregressiveWrapper(model, ignore_index=0, pad_value=0).cuda()
