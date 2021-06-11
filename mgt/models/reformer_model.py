@@ -15,6 +15,7 @@ def create_chunks(iterable, chunk_size=1):
     for ndx in range(0, array_length, chunk_size):
         yield iterable[ndx:min(ndx + chunk_size, array_length)]
 
+
 def create_sequences(training_data, max_sequence_length, padding_character=0):
     sequences = []
     for song in training_data:
@@ -61,9 +62,7 @@ class ReformerModel(object):
             nr_of_batches_processed = 0
             for batch in batches:
                 # when training, set return_loss equal to True
-                batch = torch.tensor(batch).long().cuda()
-
-                loss = self.model(batch)
+                loss = self.model(torch.tensor(batch).long().cuda(), return_loss=True)
                 loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
