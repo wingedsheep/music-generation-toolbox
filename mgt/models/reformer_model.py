@@ -6,6 +6,7 @@ import time
 
 from reformer_pytorch import ReformerLM
 from reformer_pytorch.generative_tools import TrainingWrapper
+from x_transformers import AutoregressiveWrapper
 
 from mgt.datamanagers.data_manager import Dictionary
 
@@ -110,7 +111,7 @@ class ReformerModel(object):
         )
 
         # 0 is used for padding and no loss to be calculated on it
-        training_wrapper = TrainingWrapper(model, ignore_index=0, pad_value=0).cuda()
+        training_wrapper = AutoregressiveWrapper(model, ignore_index=0, pad_value=0).cuda()
         return training_wrapper
 
     def create_optimizer(self):
