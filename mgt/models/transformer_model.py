@@ -61,7 +61,7 @@ class TransformerModel(object):
                 # when training, set return_loss equal to True
                 batch = torch.tensor(batch).long().cuda()
 
-                loss = self.model(batch, return_loss=True)
+                loss = self.model(batch)
                 loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
