@@ -51,16 +51,15 @@ class TransformerModel(object):
         )
         self.optimizer = self.create_optimizer()
 
-    def train(self, x_train, epochs, batch_size=8, stop_loss=0.1, report_per_x_batches=25):
+    def train(self, x_train, epochs, batch_size=8, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=20):
         self.model.train()
         start_time = time.time()
+        sequences = create_sequences(x_train, self.max_sequence_length)
         for epoch in range(epochs):
             print(f"Training epoch {epoch + 1}.")
 
-            sequences = create_sequences(x_train, self.max_sequence_length)
-            random.shuffle(sequences)
-            batches = list(create_chunks(sequences, chunk_size=batch_size))
-            print(f"Number of batches: {len(batches)}")
+            indices = np.random.randint(0, len(sequences), batch_size * batches_per_epoch)
+            batches = list(create_chunks(sequences[indices], chunk_size=batch_size))
 
             epoch_losses = []
             batch_losses = []
