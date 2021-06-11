@@ -51,7 +51,7 @@ class TransformerModel(object):
         )
         self.optimizer = self.create_optimizer()
 
-    def train(self, x_train, epochs, batch_size=8, stop_loss=0.1):
+    def train(self, x_train, epochs, batch_size=8, stop_loss=0.1, report_per_x_batches=25):
         self.model.train()
         start_time = time.time()
         for epoch in range(epochs):
@@ -83,8 +83,8 @@ class TransformerModel(object):
                 batch_losses.append(loss_item)
                 epoch_losses.append(loss_item)
 
-                if nr_of_batches_processed % 100 == 0:
-                    print(f"Processed {nr_of_batches_processed} out of {len(batches)} with loss {np.mean(batch_losses)}.")
+                if nr_of_batches_processed % report_per_x_batches == 0:
+                    print(f"Processed {nr_of_batches_processed} / {len(batches)} with loss {np.mean(batch_losses)}.")
                     batch_losses = []
 
             epoch_loss = np.mean(epoch_losses)
