@@ -32,7 +32,7 @@ class ReformerModel(object):
     def __init__(self,
                  dictionary: Dictionary,
                  max_sequence_length=2048,
-                 learning_rate=1e-3,
+                 learning_rate=2e-4,
                  full_attn_thres=512,
                  lsh_dropout=0.1,
                  depth=6,
