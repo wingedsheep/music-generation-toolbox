@@ -30,7 +30,6 @@ class TransformerModel(object):
                  ):
         self.dictionary = dictionary
         self.learning_rate = learning_rate
-        self.optimizer = self.create_optimizer()
         self.max_sequence_length = max_sequence_length
         self.model = self.create_model(
             num_tokens=dictionary.size(),
@@ -40,6 +39,7 @@ class TransformerModel(object):
             depth=depth,
             heads=heads
         )
+        self.optimizer = self.create_optimizer()
 
     def train(self, x_train, epochs, batch_size=4, stop_loss=0.1):
         self.model.train()
