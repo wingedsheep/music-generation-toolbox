@@ -99,7 +99,7 @@ class ReformerModel(object):
         return sample.cpu().detach().numpy()[0]
 
     def create_model(self):
-        model = ReformerLM(
+        model = TrainingWrapper(ReformerLM(
             num_tokens=self.dictionary.size() + 1,
             dim=self.dim,
             depth=self.depth,
@@ -108,7 +108,7 @@ class ReformerModel(object):
             causal=True,
             full_attn_thres=self.full_attn_thres,
             heads=self.heads
-        )
+        ))
 
         # 0 is used for padding and no loss to be calculated on it
         training_wrapper = AutoregressiveWrapper(model, ignore_index=0, pad_value=0).cuda()
