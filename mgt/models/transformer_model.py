@@ -17,6 +17,16 @@ def create_chunks(iterable, chunk_size=1):
         yield iterable[ndx:min(ndx + chunk_size, array_length)]
 
 
+def create_sequences(training_data, max_sequence_length, padding_character=0):
+    sequences = []
+    for song in training_data:
+        padded_song = list(np.repeat([padding_character], max_sequence_length)) + song
+        for i in range(len(padded_song) - max_sequence_length):
+            sequence = padded_song[i: i + max_sequence_length]
+            sequences.append(sequence)
+    return sequences
+
+
 class TransformerModel(object):
 
     def __init__(self,
@@ -47,13 +57,8 @@ class TransformerModel(object):
         for epoch in range(epochs):
             print(f"Training epoch {epoch + 1}.")
 
-            new_list = x_train.copy()
-            random.shuffle(new_list)
-
-            print(f"Number of midis: {len(new_list)}")
-            flat_list = [item for sublist in new_list for item in sublist]
-            chunks = list(create_chunks(flat_list, chunk_size=self.max_sequence_length))
-            batches = list(create_chunks(chunks, chunk_size=batch_size))
+            sequences = create_sequences(x_train, self.max_sequence_length)
+            batches = list(create_chunks(sequences, chunk_size=batch_size))
             print(f"Number of batches: {len(batches)}")
 
             epoch_losses = []
