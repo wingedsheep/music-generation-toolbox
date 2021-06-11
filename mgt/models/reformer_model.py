@@ -113,7 +113,7 @@ class ReformerModel(object):
         )
 
         # 0 is used for padding and no loss to be calculated on it
-        training_wrapper = AutoregressiveWrapper(model, ignore_index=0, pad_value=0).cuda()
+        training_wrapper = TrainingWrapper(model, ignore_index=0, pad_value=0).cuda()
         return training_wrapper
 
     def create_optimizer(self):
