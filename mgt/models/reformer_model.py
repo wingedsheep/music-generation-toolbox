@@ -68,8 +68,6 @@ class ReformerModel(object):
                 loss = self.model(torch.tensor(batch).long().cuda(), return_loss=True)
                 loss.backward()
 
-                i=0
-
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
                 self.optimizer.step()
                 self.optimizer.zero_grad()
