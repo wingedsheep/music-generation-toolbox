@@ -51,17 +51,20 @@ class TransformerModel(object):
         )
         self.optimizer = self.create_optimizer()
 
-    def train(self, x_train, epochs, batch_size=4, stop_loss=0.1):
+    def train(self, x_train, epochs, batch_size=8, stop_loss=0.1):
         self.model.train()
         start_time = time.time()
         for epoch in range(epochs):
             print(f"Training epoch {epoch + 1}.")
 
             sequences = create_sequences(x_train, self.max_sequence_length)
+            random.shuffle(sequences)
             batches = list(create_chunks(sequences, chunk_size=batch_size))
             print(f"Number of batches: {len(batches)}")
 
             epoch_losses = []
+            batch_losses = []
+            nr_of_batches_processed = 0
             for batch in batches:
                 # when training, set return_loss equal to True
                 batch = torch.tensor(batch).long().cuda()
@@ -73,9 +76,16 @@ class TransformerModel(object):
                 self.optimizer.step()
                 self.optimizer.zero_grad()
 
+                nr_of_batches_processed += 1
+
                 loss_item = loss.item()
+
+                batch_losses.append(loss_item)
                 epoch_losses.append(loss_item)
-                print(f"Batch loss is {loss_item}.")
+
+                if nr_of_batches_processed % 100 == 0:
+                    print(f"Processed {nr_of_batches_processed} out of {len(batches)} with loss {np.mean(batch_losses)}.")
+                    batch_losses = []
 
             epoch_loss = np.mean(epoch_losses)
             if epoch_loss <= stop_loss:
