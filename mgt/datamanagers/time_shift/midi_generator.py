@@ -21,7 +21,7 @@ class MidiGenerator(object):
                 duration = event.data["duration"] * time_per_tick
                 end_time = start_time + duration
                 note = pretty_midi.Note(
-                    velocity=event.data["velocity"] * 4,
+                    velocity=int(event.data["velocity"] * 4),
                     pitch=event.data["pitch"],
                     start=start_time,
                     end=end_time
