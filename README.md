@@ -12,3 +12,6 @@ Great transformers implementations from lucidrains
 
 Pop music transformer and REMI format
 * https://github.com/YatingMusic/remi
+
+Pop909 dataset
+* https://github.com/music-x-lab/POP909-Dataset
