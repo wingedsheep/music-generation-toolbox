@@ -56,7 +56,7 @@ class ReformerModel(object):
                  max_sequence_length=2048,
                  learning_rate=2e-4,
                  full_attn_thres=512,
-                 lsh_dropout=0.1,
+                 dropout=0.1,
                  depth=12,
                  dim=512,
                  heads=8
@@ -65,7 +65,7 @@ class ReformerModel(object):
         self.max_sequence_length = max_sequence_length
         self.learning_rate = learning_rate
         self.full_attn_thres = full_attn_thres
-        self.lsh_dropout = lsh_dropout
+        self.dropout = dropout
         self.depth = depth
         self.dim = dim
         self.heads = heads
@@ -131,10 +131,12 @@ class ReformerModel(object):
             dim=self.dim,
             depth=self.depth,
             max_seq_len=self.max_sequence_length,
-            lsh_dropout=self.lsh_dropout,
+            lsh_dropout=self.dropout,
+            ff_dropout=self.dropout,
+            layer_dropout=self.dropout,
             causal=True,
             full_attn_thres=self.full_attn_thres,
-            heads=self.heads
+            heads=self.heads,
         )
 
         # 0 is used for padding and no loss to be calculated on it
