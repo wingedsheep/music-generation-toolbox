@@ -35,7 +35,7 @@ def create_sequences(training_data, max_sequence_length, padding_character=0):
     return sequences
 
 
-def get_batches(padded_training_data, batches_per_epoch, batch_size, max_sequence_length, padding_character=0):
+def get_batches(padded_training_data, batches_per_epoch, batch_size, max_sequence_length):
     indices = []
     for i in range(batches_per_epoch * batch_size):
         song_index = random.randint(0, len(padded_training_data) - 1)
@@ -44,8 +44,7 @@ def get_batches(padded_training_data, batches_per_epoch, batch_size, max_sequenc
 
     sequences = []
     for selection in indices:
-        selected_sequence = padded_training_data[selection[0]][selection[1]: selection[1] + max_sequence_length]
-        sequences.append(list(map(lambda x: x != 0, selected_sequence)))
+        sequences.append(padded_training_data[selection[0]][selection[1]: selection[1] + max_sequence_length])
 
     return list(create_chunks(sequences, chunk_size=batch_size))
 
@@ -73,7 +72,7 @@ class ReformerModel(object):
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
-    def train(self, x_train, epochs, batch_size=8, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=5):
+    def train(self, x_train, epochs, batch_size=4, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=5):
         self.model.train()
         start_time = time.time()
         padded_training_data = pad_training_data(x_train, self.max_sequence_length)
