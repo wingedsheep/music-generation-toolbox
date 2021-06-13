@@ -1,4 +1,5 @@
 from datetime import time
+import random
 
 import numpy as np
 import torch
@@ -6,7 +7,6 @@ import time
 
 from reformer_pytorch import ReformerLM
 from reformer_pytorch.generative_tools import TrainingWrapper
-from x_transformers import AutoregressiveWrapper
 
 from mgt.datamanagers.data_manager import Dictionary
 
@@ -17,6 +17,14 @@ def create_chunks(iterable, chunk_size=1):
         yield iterable[ndx:min(ndx + chunk_size, array_length)]
 
 
+def pad_training_data(training_data, max_sequence_length, padding_character=0):
+    padded_training_data = []
+    for song in training_data:
+        padded_song = list(np.repeat([padding_character], max_sequence_length)) + song
+        padded_training_data.append(padded_song)
+    return padded_training_data
+
+
 def create_sequences(training_data, max_sequence_length, padding_character=0):
     sequences = []
     for song in training_data:
@@ -25,6 +33,21 @@ def create_sequences(training_data, max_sequence_length, padding_character=0):
             sequence = padded_song[i: i + max_sequence_length]
             sequences.append(sequence)
     return sequences
+
+
+def get_batches(padded_training_data, batches_per_epoch, batch_size, max_sequence_length, padding_character=0):
+    indices = []
+    for i in range(batches_per_epoch * batch_size):
+        song_index = random.randint(0, len(padded_training_data) - 1)
+        starting_index = random.randint(0, len(padded_training_data[song_index]) - max_sequence_length - 1)
+        indices.append((song_index, starting_index))
+
+    sequences = []
+    for selection in indices:
+        selected_sequence = padded_training_data[selection[0]][selection[1]: selection[1] + max_sequence_length]
+        sequences.append(list(map(lambda x: x != 0, selected_sequence)))
+
+    return list(create_chunks(sequences, chunk_size=batch_size))
 
 
 class ReformerModel(object):
@@ -53,12 +76,15 @@ class ReformerModel(object):
     def train(self, x_train, epochs, batch_size=8, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=5):
         self.model.train()
         start_time = time.time()
-        sequences = create_sequences(x_train, self.max_sequence_length)
+        padded_training_data = pad_training_data(x_train, self.max_sequence_length)
         for epoch in range(epochs):
             print(f"Training epoch {epoch + 1}.")
 
-            indices = np.random.randint(0, len(sequences), batch_size * batches_per_epoch)
-            batches = list(create_chunks(np.array(sequences)[indices], chunk_size=batch_size))
+            batches = get_batches(
+                padded_training_data,
+                batches_per_epoch=batches_per_epoch,
+                batch_size=batch_size,
+                max_sequence_length=self.max_sequence_length)
 
             epoch_losses = []
             batch_losses = []
