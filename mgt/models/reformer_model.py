@@ -30,7 +30,7 @@ def create_sequences(training_data, max_sequence_length, padding_character=0):
     for song in training_data:
         padded_song = list(np.repeat([padding_character], max_sequence_length)) + song
         for i in range(len(padded_song) - max_sequence_length):
-            sequence = padded_song[i: i + max_sequence_length]
+            sequence = padded_song[i: i + max_sequence_length + 1]
             sequences.append(sequence)
     return sequences
 
