@@ -189,7 +189,7 @@ def item2event(groups):
                 time=item.start,
                 value='{}/{}'.format(index + 1, DEFAULT_FRACTION),
                 text='{}'.format(item.start)))
-            if item.name == 'Instrument':
+            if item.name == 'Note':
                 # instrument
                 events.append(Event(
                     name='Instrument',
