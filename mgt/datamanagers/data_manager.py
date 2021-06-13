@@ -8,7 +8,10 @@ class Dictionary(object):
         self.dtw = data_to_word
 
     def word_to_data(self, word):
-        return self.wtd[word]
+        try:
+            return self.wtd[word]
+        except Exception as e:
+            print(f"{word} not in dictionary)")
 
     def data_to_word(self, data):
         return self.dtw[data]

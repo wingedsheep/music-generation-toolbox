@@ -26,15 +26,15 @@ class CompressedRemiDataManager(DataManager):
             for transposition_step in self.transposition_steps:
                 data = util.extract_data(path,
                                          transposition_steps=transposition_step,
-                                         dictionary=self.dictionary,
+                                         dictionary=self.dictionary2,
                                          use_chords=self.use_chords)
 
                 stringified = ' '.join([str(x) for x in data]).encode('ascii')
                 compressed = zlib.compress(stringified)
-                compressed_hex = binascii.hexlify(compressed)
+                compressed_hex = binascii.hexlify(compressed).decode('ascii')
 
                 words = []
-                for i in range(len(compressed_hex), step=2):
+                for i in range(0, len(compressed_hex), 2):
                     word = compressed_hex[i] + compressed_hex[i + 1]
                     words.append(self.dictionary.word_to_data(word))
 
@@ -44,5 +44,5 @@ class CompressedRemiDataManager(DataManager):
     def to_midi(self, data) -> MidiWrapper:
         compressed = ''.join([self.dictionary.data_to_word(x) for x in data])
         decompressed = zlib.decompress(binascii.unhexlify(compressed)).decode('ascii')
-        decompressed_data = decompressed.split(" ")
+        decompressed_data = [int(x) for x in decompressed.split(" ")]
         return MidiToolkitWrapper(util.to_midi(decompressed_data, self.dictionary2))
