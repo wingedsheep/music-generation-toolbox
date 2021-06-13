@@ -20,7 +20,7 @@ def create_chunks(iterable, chunk_size=1):
 def create_sequences(training_data, max_sequence_length, padding_character=0):
     sequences = []
     for song in training_data:
-        padded_song = list(np.repeat([padding_character], max_sequence_length)) + song
+        padded_song = list(np.repeat([padding_character], max_sequence_length - 1)) + song
         for i in range(len(padded_song) - max_sequence_length):
             sequence = padded_song[i: i + max_sequence_length]
             sequences.append(sequence)
@@ -136,7 +136,8 @@ class TransformerModel(object):
                 depth=depth,
                 heads=heads,
                 attn_dropout=dropout,  # dropout post-attention
-                ff_dropout=dropout  # feedforward dropout
+                ff_dropout=dropout,  # feedforward dropout
+                rotary_pos_emb=True
             )
         ),
             ignore_index=0,
