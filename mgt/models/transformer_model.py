@@ -44,7 +44,7 @@ def get_batches(padded_training_data, batches_per_epoch, batch_size, max_sequenc
 
     sequences = []
     for selection in indices:
-        sequences.append(padded_training_data[selection[0]][selection[1]: selection[1] + max_sequence_length])
+        sequences.append(padded_training_data[selection[0]][selection[1]: selection[1] + max_sequence_length + 1])
 
     return list(create_chunks(sequences, chunk_size=batch_size))
 

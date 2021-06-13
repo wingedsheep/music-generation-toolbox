@@ -57,9 +57,9 @@ class ReformerModel(object):
                  learning_rate=2e-4,
                  full_attn_thres=512,
                  lsh_dropout=0.1,
-                 depth=6,
+                 depth=12,
                  dim=512,
-                 heads=6
+                 heads=8
                  ):
         self.dictionary = dictionary
         self.max_sequence_length = max_sequence_length
