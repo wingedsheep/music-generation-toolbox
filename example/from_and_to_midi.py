@@ -13,14 +13,15 @@ def run():
     midi_path = os.path.join(os.path.dirname(__file__), midi_path)
 
     # Parse midi using timeshift method
-    timeshift_data_manager = TimeShiftDataManager()
-    timeshift_dataset = timeshift_data_manager.prepare_data([midi_path])
-    timeshift_midi = timeshift_data_manager.to_midi(timeshift_dataset.data[0])
-    timeshift_midi.save("timeshift.midi")
+    # timeshift_data_manager = TimeShiftDataManager()
+    # timeshift_dataset = timeshift_data_manager.prepare_data([midi_path])
+    # timeshift_midi = timeshift_data_manager.to_midi(timeshift_dataset.data[0])
+    # timeshift_midi.save("timeshift.midi")
 
     # Parse midi using remi method
     remi_data_manager = RemiDataManager()
     remi_dataset = remi_data_manager.prepare_data([midi_path])
+    print([remi_data_manager.dictionary.data_to_word(x) for x in remi_dataset.data[0]])
     remi_midi = remi_data_manager.to_midi(remi_dataset.data[0])
     remi_midi.save("remi.midi")
 

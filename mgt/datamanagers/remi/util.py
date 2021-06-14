@@ -30,12 +30,17 @@ class Item(object):
 
 
 # read notes and tempo changes from midi (assume there is only one track)
-def read_items(file_path, transposition_steps=0):
+def read_items(file_path, transposition_steps=0, map_tracks_to_instruments=None):
+    if map_tracks_to_instruments is None:
+        map_tracks_to_instruments = {}
+
     midi_obj = miditoolkit.midi.parser.MidiFile(file_path)
     # note
     notes = []
     note_items = []
     for index, instrument in enumerate(midi_obj.instruments):
+        if index in map_tracks_to_instruments:
+            instrument = map_tracks_to_instruments.get(index)
         for note in instrument.notes:
             notes.append({'note': note, 'instrument': 128 if instrument.is_drum else instrument.program})
 
@@ -121,11 +126,14 @@ def extract_chords(items):
     return output
 
 
-def extract_events(input_path, transposition_steps=0, use_chords=True):
+def extract_events(input_path, transposition_steps=0, map_tracks_to_instruments=None, use_chords=True):
+    if map_tracks_to_instruments is None:
+        map_tracks_to_instruments = {}
+
     if transposition_steps != 0:
         print("Transposing {} steps.".format(transposition_steps))
 
-    note_items, tempo_items = read_items(input_path, transposition_steps=transposition_steps)
+    note_items, tempo_items = read_items(input_path, transposition_steps=transposition_steps, map_tracks_to_instruments=map_tracks_to_instruments)
     note_items = quantize_items(note_items)
     max_time = note_items[-1].end
     if use_chords:
@@ -426,9 +434,11 @@ def write_midi(words, word2event, output_path, prompt_path=None, bars_in_prompt=
     print(f"Written midi to {output_path}")
 
 
-def extract_data(path, dictionary, transposition_steps=0, use_chords=True):
+def extract_data(path, dictionary, transposition_steps=0, map_tracks_to_instruments=None, use_chords=True):
+    if map_tracks_to_instruments is None:
+        map_tracks_to_instruments = {}
     print(f"Extracting data for {path}")
-    events = extract_events(path, transposition_steps=transposition_steps, use_chords=use_chords)
+    events = extract_events(path, transposition_steps=transposition_steps, map_tracks_to_instruments=map_tracks_to_instruments, use_chords=use_chords)
     words = list(map(lambda x: '{}_{}'.format(x.name, x.value), events))
     data = list(map(lambda x: dictionary.word_to_data(x), words))
     return data
