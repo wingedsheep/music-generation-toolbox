@@ -13,6 +13,7 @@ class PrettyMidiWrapper(MidiWrapper):
         self.midi = midi
 
     def save(self, path):
+        print(f"Writing midi to {path}")
         self.midi.write(path)
 
 
@@ -22,4 +23,5 @@ class MidiToolkitWrapper(MidiWrapper):
         self.midi = midi
 
     def save(self, path):
+        print(f"Writing midi to {path}")
         self.midi.dump(path)
