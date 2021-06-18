@@ -159,11 +159,10 @@ class TransformerModel(object):
         return torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
     def save_model(self, path):
-        checkpoint = {'state_dict': self.model.state_dict(), 'optimizer': self.optimizer.state_dict()}
         if path.endswith("_sd_opt.pth"):
-            torch.save(checkpoint, path + "_sd_opt.pth")
+            torch.save(self.model, path + "_sd_opt.pth")
         else:
-            torch.save(checkpoint, path + "_sd_opt.pth")
+            torch.save(self.model, path + "_sd_opt.pth")
 
     @staticmethod
     def load_model(path):
