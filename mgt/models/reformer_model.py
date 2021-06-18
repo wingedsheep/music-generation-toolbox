@@ -1,3 +1,4 @@
+import string
 from datetime import time
 import random
 
@@ -53,6 +54,7 @@ class ReformerModel(object):
 
     def __init__(self,
                  dictionary: Dictionary,
+                 checkpoint_path: string = None,
                  max_sequence_length=2048,
                  learning_rate=2e-4,
                  full_attn_thres=512,
@@ -69,7 +71,10 @@ class ReformerModel(object):
         self.depth = depth
         self.dim = dim
         self.heads = heads
-        self.model = self.create_model()
+        if checkpoint_path is not None:
+            self.model = self.load_model(checkpoint_path)
+        else:
+            self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
     def train(self, x_train, epochs, batch_size=4, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=5):
@@ -153,9 +158,9 @@ class ReformerModel(object):
         else:
             torch.save(checkpoint, path + "_sd_opt.pth")
 
-    def load_model(self, path):
+    @staticmethod
+    def load_model(path):
         if path.endswith("_sd_opt.pth"):
-            torch.load(path)
+            return torch.load(path)
         else:
-            torch.load(path + "_sd_opt.pth")
-        self.model.eval()
+            return torch.load(path + "_sd_opt.pth")
