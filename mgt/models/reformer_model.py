@@ -164,6 +164,6 @@ class ReformerModel(object):
     @staticmethod
     def load_model(path):
         if path.endswith("_sd_opt.pth"):
-            return torch.load(path)
+            return torch.load(path).cuda()
         else:
-            return torch.load(path + "_sd_opt.pth")
+            return torch.load(path + "_sd_opt.pth").cuda()
