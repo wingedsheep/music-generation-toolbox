@@ -123,11 +123,11 @@ class ReformerModel(object):
             running_time = (time.time() - start_time)
             print(f"Loss after epoch {epoch + 1} is {epoch_loss}. Running time: {running_time}")
 
-    def generate(self, output_length=100):
+    def generate(self, output_length=100, temperature=1., filter_threshold=0.9):
         self.model.eval()
         initial = torch.tensor([[0]]).long().cuda()  # assume 0 is start token
 
-        sample = self.model.generate(initial, output_length, temperature=1., filter_thres=0.9)
+        sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_threshold)
         return sample.cpu().detach().numpy()[0]
 
     def create_model(self):
