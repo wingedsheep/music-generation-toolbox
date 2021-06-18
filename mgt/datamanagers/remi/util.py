@@ -449,6 +449,9 @@ def extract_data(path, dictionary, transposition_steps=0, map_tracks_to_instrume
 def words_to_events(words):
     events = []
     for word in words:
+        if '_' not in word:
+            print(f"{word} could not be converted to an event.")
+            continue
         event_name, event_value = word.split('_')
         events.append(Event(event_name, None, event_value, None))
     return events

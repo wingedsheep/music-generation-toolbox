@@ -124,9 +124,12 @@ class TransformerModel(object):
             running_time = (time.time() - start_time)
             print(f"Loss after epoch {epoch + 1} is {epoch_loss}. Running time: {running_time}")
 
-    def generate(self, output_length=100, temperature=1., filter_treshold=0.9):
+    def generate(self, output_length=100, temperature=1., filter_treshold=0.9, prompt=None):
+        if prompt is None:
+            prompt = [0]
+
         self.model.eval()
-        initial = torch.tensor([[0]]).long().cuda()  # assume 0 is start token
+        initial = torch.tensor([prompt]).long().cuda()  # assume 0 is start token
 
         sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_treshold)
         return sample.cpu().detach().numpy()[0]
