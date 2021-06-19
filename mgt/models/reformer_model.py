@@ -145,6 +145,7 @@ class ReformerModel(object):
             causal=True,
             full_attn_thres=self.full_attn_thres,
             heads=self.heads,
+            reverse_thres=self.max_sequence_length
         )
 
         # 0 is used for padding and no loss to be calculated on it
