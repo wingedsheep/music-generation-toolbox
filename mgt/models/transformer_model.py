@@ -57,9 +57,9 @@ class TransformerModel(object):
                  checkpoint_path: string = None,
                  max_sequence_length=512,
                  learning_rate=2e-4,
-                 dropout=0.1,
+                 dropout=0.2,
                  dim=512,
-                 depth=6,
+                 depth=12,
                  heads=8
                  ):
         self.dictionary = dictionary
@@ -138,7 +138,6 @@ class TransformerModel(object):
         model = AutoregressiveWrapper(TransformerWrapper(
             num_tokens=num_tokens,
             max_seq_len=max_seq_len,
-            emb_dropout=dropout,  # dropout after embedding
             attn_layers=Decoder(
                 dim=dim,
                 depth=depth,
