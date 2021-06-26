@@ -78,7 +78,7 @@ class TransformerModel(object):
             )
         self.optimizer = self.create_optimizer()
 
-    def train(self, x_train, epochs, batch_size=16, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=20):
+    def train(self, x_train, epochs, batch_size=4, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=20):
         self.model.train()
         start_time = time.time()
         padded_training_data = pad_training_data(x_train, self.max_sequence_length)

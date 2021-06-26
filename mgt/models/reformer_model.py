@@ -77,7 +77,7 @@ class ReformerModel(object):
             self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
-    def train(self, x_train, epochs, batch_size=16, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=5):
+    def train(self, x_train, epochs, batch_size=4, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=5):
         self.model.train()
         start_time = time.time()
         padded_training_data = pad_training_data(x_train, self.max_sequence_length)
@@ -95,7 +95,7 @@ class ReformerModel(object):
             nr_of_batches_processed = 0
             for batch in batches:
                 # when training, set return_loss equal to True
-                torch_batch = [torch.tensor(x).long().cuda() for x in batch]
+                torch_batch = [torch.tensor(x).long() for x in batch]
 
                 loss = self.model(torch_batch, return_loss=True)
                 loss.backward()
@@ -128,7 +128,7 @@ class ReformerModel(object):
             prompt = [0]
 
         self.model.eval()
-        initial = torch.tensor([prompt]).long().cuda()  # assume 0 is start token
+        initial = torch.tensor([prompt]).long()  # assume 0 is start token
 
         sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_threshold)
         return sample.cpu().detach().numpy()[0]
@@ -149,7 +149,7 @@ class ReformerModel(object):
         )
 
         # 0 is used for padding and no loss to be calculated on it
-        training_wrapper = TrainingWrapper(model, ignore_index=0, pad_value=0).cuda()
+        training_wrapper = TrainingWrapper(model, ignore_index=0, pad_value=0)
         return training_wrapper
 
     def create_optimizer(self):
@@ -164,6 +164,6 @@ class ReformerModel(object):
     @staticmethod
     def load_model(path):
         if path.endswith("_sd_opt.pth"):
-            return torch.load(path).cuda()
+            return torch.load(path)
         else:
-            return torch.load(path + "_sd_opt.pth").cuda()
+            return torch.load(path + "_sd_opt.pth")
