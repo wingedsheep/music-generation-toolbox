@@ -141,7 +141,6 @@ class ReformerModel(object):
             max_seq_len=self.max_sequence_length,
             lsh_dropout=self.dropout,
             ff_dropout=self.dropout,
-            layer_dropout=self.dropout,
             causal=True,
             full_attn_thres=self.full_attn_thres,
             heads=self.heads,
