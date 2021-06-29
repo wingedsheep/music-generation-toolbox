@@ -92,7 +92,7 @@ class TransformerModel(object):
             batch_losses = []
             nr_of_batches_processed = 0
             for batch in batches:
-                torch_batch = torch.tensor(batch).long().device(get_device())
+                torch_batch = torch.tensor(batch).long().to(get_device())
 
                 loss = self.model(torch_batch)
                 loss.backward()
@@ -125,7 +125,7 @@ class TransformerModel(object):
             prompt = [0]
 
         self.model.eval()
-        initial = torch.tensor([prompt]).long().device(get_device())  # assume 0 is start token
+        initial = torch.tensor([prompt]).long().to(get_device())  # assume 0 is start token
 
         sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_treshold)
         return sample.cpu().detach().numpy()[0]
@@ -145,7 +145,7 @@ class TransformerModel(object):
         ),
             ignore_index=0,
             pad_value=0
-        ).device(get_device())
+        ).to(get_device())
 
         return model
 
