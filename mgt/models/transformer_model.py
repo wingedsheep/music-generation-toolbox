@@ -50,6 +50,10 @@ def get_batches(padded_training_data, batches_per_epoch, batch_size, max_sequenc
     return list(create_chunks(sequences, chunk_size=batch_size))
 
 
+def get_device():
+    return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
 class TransformerModel(object):
 
     def __init__(self,
@@ -88,10 +92,7 @@ class TransformerModel(object):
             batch_losses = []
             nr_of_batches_processed = 0
             for batch in batches:
-                torch_batch = torch.tensor(batch).long()
-
-                if torch.cuda.is_available():
-                    torch_batch.cuda()
+                torch_batch = torch.tensor(batch).long().device(get_device())
 
                 loss = self.model(torch_batch)
                 loss.backward()
@@ -124,10 +125,7 @@ class TransformerModel(object):
             prompt = [0]
 
         self.model.eval()
-        initial = torch.tensor([prompt]).long()  # assume 0 is start token
-
-        if torch.cuda.is_available():
-            initial.cuda()
+        initial = torch.tensor([prompt]).long().device(get_device())  # assume 0 is start token
 
         sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_treshold)
         return sample.cpu().detach().numpy()[0]
@@ -147,10 +145,7 @@ class TransformerModel(object):
         ),
             ignore_index=0,
             pad_value=0
-        )
-
-        if torch.cuda.is_available():
-            model.cuda()
+        ).device(get_device())
 
         return model
 
