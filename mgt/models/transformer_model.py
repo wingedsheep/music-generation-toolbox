@@ -1,4 +1,4 @@
-import string
+from __future__ import annotations
 from datetime import time
 
 import random
@@ -54,7 +54,6 @@ class TransformerModel(object):
 
     def __init__(self,
                  dictionary: Dictionary,
-                 checkpoint_path: string = None,
                  max_sequence_length=512,
                  learning_rate=2e-4,
                  dropout=0.2,
@@ -65,17 +64,18 @@ class TransformerModel(object):
         self.dictionary = dictionary
         self.learning_rate = learning_rate
         self.max_sequence_length = max_sequence_length
-        if checkpoint_path is not None:
-            self.model = self.load_model(checkpoint_path)
-        else:
-            self.model = self.create_model(
-                num_tokens=dictionary.size(),
-                max_seq_len=max_sequence_length,
-                dropout=dropout,
-                dim=dim,
-                depth=depth,
-                heads=heads
-            )
+        self.dropout = dropout
+        self.dim = dim
+        self.depth = depth
+        self.heads = heads
+        self.model = self.create_model(
+            num_tokens=dictionary.size(),
+            max_seq_len=max_sequence_length,
+            dropout=dropout,
+            dim=dim,
+            depth=depth,
+            heads=heads
+        )
         self.optimizer = self.create_optimizer()
 
     def train(self, x_train, epochs, batch_size=4, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=20):
@@ -95,8 +95,10 @@ class TransformerModel(object):
             batch_losses = []
             nr_of_batches_processed = 0
             for batch in batches:
-                # when training, set return_loss equal to True
-                torch_batch = torch.tensor(batch).long().cuda()
+                torch_batch = torch.tensor(batch).long()
+
+                if torch.cuda.is_available():
+                    torch_batch.cuda()
 
                 loss = self.model(torch_batch)
                 loss.backward()
@@ -129,7 +131,10 @@ class TransformerModel(object):
             prompt = [0]
 
         self.model.eval()
-        initial = torch.tensor([prompt]).long().cuda()  # assume 0 is start token
+        initial = torch.tensor([prompt]).long()  # assume 0 is start token
+
+        if torch.cuda.is_available():
+            initial.cuda()
 
         sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_treshold)
         return sample.cpu().detach().numpy()[0]
@@ -150,22 +155,47 @@ class TransformerModel(object):
             ignore_index=0,
             pad_value=0
 
-        ).cuda()
+        )
+
+        if torch.cuda.is_available():
+            model.cuda()
 
         return model
 
     def create_optimizer(self):
         return torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
-    def save_model(self, path):
-        if path.endswith("_sd_opt.pth"):
-            torch.save(self.model, path + "_sd_opt.pth")
-        else:
-            torch.save(self.model, path + "_sd_opt.pth")
+    def save_checkpoint(self, path):
+        print(f'Saving checkpoint {path}')
+        torch.save({
+            'dictionary': self.dictionary,
+            'max_sequence_length': self.max_sequence_length,
+            'learning_rate': self.learning_rate,
+            'dropout': self.dropout,
+            'dim': self.dim,
+            'depth': self.depth,
+            'heads': self.heads,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+        }, path)
 
     @staticmethod
-    def load_model(path):
-        if path.endswith("_sd_opt.pth"):
-            return torch.load(path).cuda()
-        else:
-            return torch.load(path + "_sd_opt.pth").cuda()
+    def load_checkpoint(path) -> TransformerModel:
+        checkpoint = torch.load(path)
+        model = TransformerModel(
+            checkpoint['dictionary'],
+            checkpoint['max_sequence_length'],
+            checkpoint['learning_rate'],
+            checkpoint['dropout'],
+            checkpoint['dim'],
+            checkpoint['depth'],
+            checkpoint['heads']
+        )
+
+        if torch.cuda.is_available():
+            model.cuda()
+
+        model.model.load_state_dict(checkpoint['model_state_dict'])
+        model.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+        return model
