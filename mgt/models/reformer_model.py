@@ -52,6 +52,10 @@ def get_batches(padded_training_data, batches_per_epoch, batch_size, max_sequenc
     return list(create_chunks(sequences, chunk_size=batch_size))
 
 
+def get_device():
+    return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
 class ReformerModel(object):
 
     def __init__(self,
@@ -93,10 +97,7 @@ class ReformerModel(object):
             nr_of_batches_processed = 0
             for batch in batches:
                 # when training, set return_loss equal to True
-                if torch.cuda.is_available():
-                    torch_batch = [torch.tensor(x).long().cuda() for x in batch]
-                else:
-                    torch_batch = [torch.tensor(x).long() for x in batch]
+                torch_batch = [torch.tensor(x).long().to(get_device()) for x in batch]
 
                 loss = self.model(torch_batch, return_loss=True)
                 loss.backward()
@@ -129,10 +130,7 @@ class ReformerModel(object):
             prompt = [0]
 
         self.model.eval()
-        initial = torch.tensor([prompt]).long()  # assume 0 is start token
-
-        if torch.cuda.is_available():
-            initial.cuda()
+        initial = torch.tensor([prompt]).long().to(get_device())  # assume 0 is start token
 
         sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_threshold)
         return sample.cpu().detach().numpy()[0]
@@ -152,10 +150,7 @@ class ReformerModel(object):
         )
 
         # 0 is used for padding and no loss to be calculated on it
-        training_wrapper = TrainingWrapper(model, ignore_index=0, pad_value=0)
-
-        if torch.cuda.is_available():
-            training_wrapper.cuda()
+        training_wrapper = TrainingWrapper(model, ignore_index=0, pad_value=0).to(get_device())
 
         return training_wrapper
 
