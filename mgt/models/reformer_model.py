@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import string
 from datetime import time
 import random
@@ -54,12 +56,11 @@ class ReformerModel(object):
 
     def __init__(self,
                  dictionary: Dictionary,
-                 checkpoint_path: string = None,
                  max_sequence_length=2048,
-                 learning_rate=2e-4,
+                 learning_rate=1e-4,
                  full_attn_thres=512,
-                 dropout=0.1,
-                 depth=12,
+                 dropout=0.2,
+                 depth=8,
                  dim=512,
                  heads=8
                  ):
@@ -71,10 +72,7 @@ class ReformerModel(object):
         self.depth = depth
         self.dim = dim
         self.heads = heads
-        if checkpoint_path is not None:
-            self.model = self.load_model(checkpoint_path)
-        else:
-            self.model = self.create_model()
+        self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
     def train(self, x_train, epochs, batch_size=4, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=5):
@@ -95,7 +93,10 @@ class ReformerModel(object):
             nr_of_batches_processed = 0
             for batch in batches:
                 # when training, set return_loss equal to True
-                torch_batch = [torch.tensor(x).long() for x in batch]
+                if torch.cuda.is_available():
+                    torch_batch = [torch.tensor(x).long().cuda() for x in batch]
+                else:
+                    torch_batch = [torch.tensor(x).long() for x in batch]
 
                 loss = self.model(torch_batch, return_loss=True)
                 loss.backward()
@@ -130,6 +131,9 @@ class ReformerModel(object):
         self.model.eval()
         initial = torch.tensor([prompt]).long()  # assume 0 is start token
 
+        if torch.cuda.is_available():
+            initial.cuda()
+
         sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_threshold)
         return sample.cpu().detach().numpy()[0]
 
@@ -149,20 +153,45 @@ class ReformerModel(object):
 
         # 0 is used for padding and no loss to be calculated on it
         training_wrapper = TrainingWrapper(model, ignore_index=0, pad_value=0)
+
+        if torch.cuda.is_available():
+            training_wrapper.cuda()
+
         return training_wrapper
 
     def create_optimizer(self):
         return torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
-    def save_model(self, path):
-        if path.endswith("_sd_opt.pth"):
-            torch.save(self.model, path + "_sd_opt.pth")
-        else:
-            torch.save(self.model, path + "_sd_opt.pth")
+    def save_checkpoint(self, path):
+        print(f'Saving checkpoint {path}')
+        torch.save({
+            'dictionary': self.dictionary,
+            'max_sequence_length': self.max_sequence_length,
+            'learning_rate': self.learning_rate,
+            'full_attn_thres': self.full_attn_thres,
+            'dropout': self.dropout,
+            'dim': self.dim,
+            'depth': self.depth,
+            'heads': self.heads,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+        }, path)
 
     @staticmethod
-    def load_model(path):
-        if path.endswith("_sd_opt.pth"):
-            return torch.load(path)
-        else:
-            return torch.load(path + "_sd_opt.pth")
+    def load_checkpoint(path) -> ReformerModel:
+        checkpoint = torch.load(path)
+        model = ReformerModel(
+            dictionary=checkpoint['dictionary'],
+            max_sequence_length=checkpoint['max_sequence_length'],
+            learning_rate=checkpoint['learning_rate'],
+            full_attn_thres=checkpoint['full_attn_thres'],
+            dropout=checkpoint['dropout'],
+            dim=checkpoint['dim'],
+            depth=checkpoint['depth'],
+            heads=checkpoint['heads']
+        )
+
+        model.model.load_state_dict(checkpoint['model_state_dict'])
+        model.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+        return model

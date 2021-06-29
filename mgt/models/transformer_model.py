@@ -55,7 +55,7 @@ class TransformerModel(object):
     def __init__(self,
                  dictionary: Dictionary,
                  max_sequence_length=512,
-                 learning_rate=2e-4,
+                 learning_rate=1e-4,
                  dropout=0.2,
                  dim=512,
                  depth=12,
@@ -68,14 +68,7 @@ class TransformerModel(object):
         self.dim = dim
         self.depth = depth
         self.heads = heads
-        self.model = self.create_model(
-            num_tokens=dictionary.size(),
-            max_seq_len=max_sequence_length,
-            dropout=dropout,
-            dim=dim,
-            depth=depth,
-            heads=heads
-        )
+        self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
     def train(self, x_train, epochs, batch_size=4, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=20):
@@ -139,22 +132,21 @@ class TransformerModel(object):
         sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_treshold)
         return sample.cpu().detach().numpy()[0]
 
-    def create_model(self, num_tokens, max_seq_len, dropout, dim, depth, heads):
+    def create_model(self):
         model = AutoregressiveWrapper(TransformerWrapper(
-            num_tokens=num_tokens,
-            max_seq_len=max_seq_len,
+            num_tokens=self.dictionary.size(),
+            max_seq_len=self.max_sequence_length,
             attn_layers=Decoder(
-                dim=dim,
-                depth=depth,
-                heads=heads,
-                attn_dropout=dropout,  # dropout post-attention
-                ff_dropout=dropout,  # feedforward dropout
+                dim=self.dim,
+                depth=self.depth,
+                heads=self.heads,
+                attn_dropout=self.dropout,  # dropout post-attention
+                ff_dropout=self.dropout,  # feedforward dropout
                 rotary_pos_emb=True
             )
         ),
             ignore_index=0,
             pad_value=0
-
         )
 
         if torch.cuda.is_available():
@@ -191,9 +183,6 @@ class TransformerModel(object):
             checkpoint['depth'],
             checkpoint['heads']
         )
-
-        if torch.cuda.is_available():
-            model.cuda()
 
         model.model.load_state_dict(checkpoint['model_state_dict'])
         model.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])

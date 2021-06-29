@@ -7,7 +7,7 @@ import glob
 
 def run():
     """
-    Example showing how we can train a new model and generate new music with it.
+    Example showing how to train a new model and generate new music with it.
     """
 
     midi_path = '../data/pop/'
