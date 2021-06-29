@@ -185,6 +185,7 @@ class TransformerModel(object):
         )
 
         model.model.load_state_dict(checkpoint['model_state_dict'])
+        model.model.cuda()
         model.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
         return model
