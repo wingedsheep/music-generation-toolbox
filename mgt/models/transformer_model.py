@@ -90,8 +90,8 @@ class TransformerModel(object):
             for batch in batches:
                 torch_batch = torch.tensor(batch).long()
 
-                if torch.cuda.is_available():
-                    torch_batch.cuda()
+                # if torch.cuda.is_available():
+                torch_batch.cuda()
 
                 loss = self.model(torch_batch)
                 loss.backward()
@@ -126,8 +126,8 @@ class TransformerModel(object):
         self.model.eval()
         initial = torch.tensor([prompt]).long()  # assume 0 is start token
 
-        if torch.cuda.is_available():
-            initial.cuda()
+        # if torch.cuda.is_available():
+        initial.cuda()
 
         sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_treshold)
         return sample.cpu().detach().numpy()[0]
@@ -149,8 +149,8 @@ class TransformerModel(object):
             pad_value=0
         )
 
-        if torch.cuda.is_available():
-            model.cuda()
+        # if torch.cuda.is_available():
+        model.cuda()
 
         return model
 
