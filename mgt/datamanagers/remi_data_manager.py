@@ -22,12 +22,16 @@ class RemiDataManager(DataManager):
         training_data = []
         for path in midi_paths:
             for transposition_step in self.transposition_steps:
-                data = util.extract_data(path,
-                                         transposition_steps=transposition_step,
-                                         map_tracks_to_instruments=self.map_tracks_to_instruments,
-                                         dictionary=self.dictionary,
-                                         use_chords=self.use_chords)
-                training_data.append(data)
+                try:
+                    data = util.extract_data(path,
+                                             transposition_steps=transposition_step,
+                                             map_tracks_to_instruments=self.map_tracks_to_instruments,
+                                             dictionary=self.dictionary,
+                                             use_chords=self.use_chords)
+                    training_data.append(data)
+                except Exception as e:
+                    print(e)
+
         return DataSet(training_data, self.dictionary)
 
     def to_midi(self, data) -> MidiWrapper:
