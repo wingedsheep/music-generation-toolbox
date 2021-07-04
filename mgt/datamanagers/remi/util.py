@@ -5,6 +5,8 @@ import copy
 # parameters for input
 from mgt.datamanagers.remi import chord_recognition
 
+DRUM_INSTRUMENT = 128
+
 DEFAULT_VELOCITY_BINS = np.linspace(0, 128, 32 + 1, dtype=np.int)
 DEFAULT_FRACTION = 16
 DEFAULT_DURATION_BINS = np.arange(60, 3841, 60, dtype=int)
@@ -42,14 +44,14 @@ def read_items(file_path, transposition_steps=0, map_tracks_to_instruments=None)
         if index in map_tracks_to_instruments:
             program = map_tracks_to_instruments.get(index)
         else:
-            program = 128 if instrument.is_drum else instrument.program
+            program = DRUM_INSTRUMENT if instrument.is_drum else instrument.program
         for note in instrument.notes:
             notes.append({'note': note, 'instrument': program})
 
     notes.sort(key=lambda x: (x['note'].start, x['instrument'], x['note'].pitch))
     for note in notes:
         adjusted_pitch = note['note'].pitch
-        if note['instrument'] != 128:
+        if note['instrument'] != DRUM_INSTRUMENT:
             adjusted_pitch += transposition_steps
 
             # To prevent invalid pitches
@@ -114,9 +116,12 @@ def quantize_items(items, ticks=120):
 
 
 # extract chord
-def extract_chords(items):
+def extract_chords(items: [Item]):
     method = chord_recognition.MIDIChord()
-    chords = method.extract(notes=items)
+
+    items_without_drums = list(filter(lambda item: item.instrument != DRUM_INSTRUMENT, items))
+
+    chords = method.extract(notes=items_without_drums)
     output = []
     for chord in chords:
         output.append(Item(
@@ -135,7 +140,11 @@ def extract_events(input_path, transposition_steps=0, map_tracks_to_instruments=
     if transposition_steps != 0:
         print("Transposing {} steps.".format(transposition_steps))
 
-    note_items, tempo_items = read_items(input_path, transposition_steps=transposition_steps, map_tracks_to_instruments=map_tracks_to_instruments)
+    note_items, tempo_items = read_items(
+        input_path,
+        transposition_steps=transposition_steps,
+        map_tracks_to_instruments=map_tracks_to_instruments)
+
     note_items = quantize_items(note_items)
     max_time = note_items[-1].end
     if use_chords:
@@ -379,7 +388,7 @@ def write_midi(words, word2event, output_path, prompt_path=None, bars_in_prompt=
 
         existing_notes = {}
         for instrument in midi.instruments:
-            program = 128 if instrument.is_drum else instrument.program
+            program = DRUM_INSTRUMENT if instrument.is_drum else instrument.program
             for note in instrument.notes:
                 if note.end <= last_time:
                     existing_notes.setdefault(program, []).append(note)
@@ -391,8 +400,8 @@ def write_midi(words, word2event, output_path, prompt_path=None, bars_in_prompt=
                     miditoolkit.midi.containers.Marker(text=c[1], time=c[0] + last_time))
 
         for instrument, instrument_notes in notes.items():
-            program = 0 if instrument == 128 else instrument
-            is_drum = True if instrument == 128 else False
+            program = 0 if instrument == DRUM_INSTRUMENT else instrument
+            is_drum = True if instrument == DRUM_INSTRUMENT else False
             inst = miditoolkit.midi.containers.Instrument(program, is_drum=is_drum)
 
             if instrument in existing_notes:
@@ -425,8 +434,8 @@ def write_midi(words, word2event, output_path, prompt_path=None, bars_in_prompt=
                     miditoolkit.midi.containers.Marker(text=c[1], time=c[0]))
 
         for instrument, instrument_notes in notes.items():
-            program = 0 if instrument == 128 else instrument
-            is_drum = True if instrument == 128 else False
+            program = 0 if instrument == DRUM_INSTRUMENT else instrument
+            is_drum = True if instrument == DRUM_INSTRUMENT else False
             inst = miditoolkit.midi.containers.Instrument(program, is_drum=is_drum)
             inst.notes = instrument_notes
             midi.instruments.append(inst)
@@ -568,8 +577,8 @@ def to_midi(data, dictionary):
                 miditoolkit.midi.containers.Marker(text=c[1], time=c[0]))
 
     for instrument, instrument_notes in notes.items():
-        program = 0 if instrument == 128 else instrument
-        is_drum = True if instrument == 128 else False
+        program = 0 if instrument == DRUM_INSTRUMENT else instrument
+        is_drum = True if instrument == DRUM_INSTRUMENT else False
         inst = miditoolkit.midi.containers.Instrument(program, is_drum=is_drum)
         inst.notes = instrument_notes
         midi.instruments.append(inst)
