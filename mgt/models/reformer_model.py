@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import string
 from datetime import time
 import random
 
@@ -28,12 +27,12 @@ def get_batches(training_data, batches_per_epoch, batch_size, max_sequence_lengt
     indices = []
     for i in range(batches_per_epoch * batch_size):
         song_index = random.randint(0, len(training_data) - 1)
-        starting_index = random.randint(0, len(training_data[song_index]) - 1)
+        starting_index = random.randint(0, len(training_data[song_index]) - max_sequence_length - 1)
         indices.append((song_index, starting_index))
 
     sequences = []
     for selection in indices:
-        padded_song = pad(training_data[selection[0]], max_sequence_length)
+        padded_song = training_data[selection[0]]
         sequences.append(padded_song[selection[1]: selection[1] + max_sequence_length + 1])
 
     return list(create_chunks(sequences, chunk_size=batch_size))
