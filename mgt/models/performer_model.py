@@ -125,7 +125,7 @@ class PerformerModel(object):
             heads=self.heads,
             causal=True,
             reversible=False,
-            rotary_pos_emb=True,        # use rotary positional embedding, which endows linear attention with relative positional encoding with no learned parameters. should always be turned on unless if you want to go back to old absolute positional encoding
+            rotary_position_emb=True,   # use rotary positional embedding, which endows linear attention with relative positional encoding with no learned parameters. should always be turned on unless if you want to go back to old absolute positional encoding
             attn_dropout=self.dropout,  # dropout post-attention
             ff_dropout=self.dropout,    # feedforward dropout
             local_attn_heads=4,         # 4 heads are local attention, 4 others are global performers
