@@ -47,11 +47,11 @@ class ReformerModel(object):
 
     def __init__(self,
                  dictionary: Dictionary,
-                 max_sequence_length=2048,
+                 max_sequence_length=4096,
                  learning_rate=1e-4,
                  full_attn_thres=512,
-                 dropout=0.2,
-                 depth=8,
+                 dropout=0.1,
+                 depth=3,
                  dim=512,
                  heads=8
                  ):
@@ -66,7 +66,7 @@ class ReformerModel(object):
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
-    def train(self, x_train, epochs, batch_size=4, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=5):
+    def train(self, x_train, epochs, batch_size=3, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=5):
         self.model.train()
         start_time = time.time()
         for epoch in range(epochs):
