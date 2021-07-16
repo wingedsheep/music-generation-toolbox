@@ -8,6 +8,7 @@ import torch
 import numpy as np
 
 from performer_pytorch import PerformerLM
+from x_transformers import AutoregressiveWrapper
 
 from mgt.datamanagers.data_manager import Dictionary
 
@@ -117,7 +118,7 @@ class PerformerModel(object):
         return sample.cpu().detach().numpy()[0]
 
     def create_model(self):
-        model = PerformerLM(
+        model = AutoregressiveWrapper(PerformerLM(
             num_tokens=self.dictionary.size(),
             dim=self.dim,
             depth=self.depth,
@@ -130,6 +131,9 @@ class PerformerModel(object):
             ff_dropout=self.dropout,    # feedforward dropout
             local_attn_heads=4,         # 4 heads are local attention, 4 others are global performers
             local_window_size=256,      # window size of local attention
+        ),
+            ignore_index=0,
+            pad_value=0
         ).to(get_device())
 
         return model
