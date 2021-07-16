@@ -1,9 +1,8 @@
-from pretty_midi import pretty_midi
-
 from mgt.datamanagers.data_manager import DataManager, DataSet
 from mgt.datamanagers.midi_wrapper import MidiWrapper, MidiToolkitWrapper
 from mgt.datamanagers.remi import util
 from mgt.datamanagers.remi.dictionary_generator import DictionaryGenerator
+import pretty_midi
 
 
 class RemiDataManager(DataManager):
@@ -18,7 +17,7 @@ class RemiDataManager(DataManager):
         self.map_tracks_to_instruments = map_tracks_to_instruments
         self.dictionary = DictionaryGenerator.create_dictionary()
 
-    def prepare_data(self, midi_paths) -> DataSet:
+    def prepare_data(self, midi_paths: [pretty_midi.PrettyMIDI]) -> DataSet:
         training_data = []
         for path in midi_paths:
             for transposition_step in self.transposition_steps:

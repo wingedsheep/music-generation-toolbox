@@ -4,6 +4,7 @@ import copy
 
 # parameters for input
 from mgt.datamanagers.remi import chord_recognition
+from mgt.datamanagers.time_shift.event_extractor import Event
 
 DRUM_INSTRUMENT = 128
 
@@ -133,7 +134,12 @@ def extract_chords(items: [Item]):
     return output
 
 
-def extract_events(input_path, transposition_steps=0, map_tracks_to_instruments=None, use_chords=True):
+def extract_events(input_path,
+                   transposition_steps=0,
+                   map_tracks_to_instruments=None,
+                   use_chords=True,
+                   only_chords=False) -> [Event]:
+
     if map_tracks_to_instruments is None:
         map_tracks_to_instruments = {}
 
@@ -154,6 +160,10 @@ def extract_events(input_path, transposition_steps=0, map_tracks_to_instruments=
         items = tempo_items + note_items
     groups = group_items(items, max_time)
     events = item2event(groups)
+
+    if only_chords:
+        events = list(filter(lambda x: x.name == 'Chord' and x.value != 'N:N', events))
+
     return events
 
 
@@ -445,11 +455,20 @@ def write_midi(words, word2event, output_path, prompt_path=None, bars_in_prompt=
     print(f"Written midi to {output_path}")
 
 
-def extract_data(path, dictionary, transposition_steps=0, map_tracks_to_instruments=None, use_chords=True):
+def extract_data(path,
+                 dictionary,
+                 transposition_steps=0,
+                 map_tracks_to_instruments=None,
+                 use_chords=True,
+                 only_chords=False):
     if map_tracks_to_instruments is None:
         map_tracks_to_instruments = {}
     print(f"Extracting data for {path}")
-    events = extract_events(path, transposition_steps=transposition_steps, map_tracks_to_instruments=map_tracks_to_instruments, use_chords=use_chords)
+    events = extract_events(path,
+                            transposition_steps=transposition_steps,
+                            map_tracks_to_instruments=map_tracks_to_instruments,
+                            use_chords=use_chords,
+                            only_chords=only_chords)
     words = list(map(lambda x: '{}_{}'.format(x.name, x.value), events))
     data = list(map(lambda x: dictionary.word_to_data(x), words))
     return data
