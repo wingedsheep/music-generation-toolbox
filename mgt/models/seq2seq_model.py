@@ -18,7 +18,7 @@ def get_device():
 
 def get_batch(sources, targets, batch_size):
     indices = random.sample(list(range(len(sources))), batch_size)
-    return sources[indices], targets[indices]
+    return [sources[i] for i in indices], [targets[i] for i in indices]
 
 
 class Seq2seqModel(object):
