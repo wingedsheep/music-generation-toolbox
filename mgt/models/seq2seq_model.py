@@ -59,6 +59,10 @@ class Seq2seqModel(object):
                     targets,
                     batch_size=batch_size)
 
+                print('----------------------')
+                print(batch_sources)
+                print(batch_targets)
+
                 batch_sources = torch.tensor(batch_sources).long().to(get_device())
                 batch_targets = torch.tensor(batch_targets).long().to(get_device())
                 src_mask = torch.ones(batch_sources.shape[0], batch_sources.shape[1]).bool().cuda()
