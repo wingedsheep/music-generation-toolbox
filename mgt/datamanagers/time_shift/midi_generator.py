@@ -7,7 +7,7 @@ class MidiGenerator(object):
 
     @classmethod
     def events_to_midi(cls, events: [Event], starting_tempo=120) -> pretty_midi.PrettyMIDI:
-        midi = pretty_midi.PrettyMIDI()
+        midi = pretty_midi.PrettyMIDI(resolution=480)
         events_per_instrument = cls.get_events_per_instrument(events)
         time_per_tick = (60 / starting_tempo / 32) * 4
 

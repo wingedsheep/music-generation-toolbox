@@ -21,7 +21,7 @@ class TimeShiftDataManager(DataManager):
         training_data = []
         for midi in midi_paths:
             print(f"preparing data for {midi}")
-            midi_data = pretty_midi.PrettyMIDI(midi)
+            midi_data = pretty_midi.PrettyMIDI(midi, resolution=480)
             events = self.event_extractor.extract_events(midi_data)
             words = WordsConverter.events_to_words(events)
             input_data = self.input_data_converter.words_to_input_data(words)
@@ -31,7 +31,7 @@ class TimeShiftDataManager(DataManager):
 
     def to_midi(self, data) -> MidiWrapper:
         restored_events = self.to_events(data)
-        return PrettyMidiWrapper(self.midi_generator.events_to_midi(restored_events))
+        return PrettyMidiWrapper(self.midi_generator.events_to_midi(restored_events, starting_tempo=171))
 
     def to_events(self, data):
         restored_words = self.input_data_converter.input_data_to_words(data)

@@ -16,9 +16,17 @@ def get_device():
     return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def get_batch(sources, targets, batch_size):
+def get_batch(sources, targets, batch_size, mask_characters=None):
+    if mask_characters is None:
+        mask_characters = []
     indices = random.sample(list(range(len(sources))), batch_size)
-    return [sources[i] for i in indices], [targets[i] for i in indices]
+    print(indices)
+    sources, targets = [sources[i] for i in indices], [targets[i] for i in indices]
+
+    sources_mask = [[0 if x in mask_characters else 1 for x in y] for y in sources]
+    targets_mask = [[0 if x in mask_characters else 1 for x in y] for y in targets]
+
+    return sources, targets, sources_mask, targets_mask
 
 
 class Seq2seqModel(object):
@@ -44,7 +52,11 @@ class Seq2seqModel(object):
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
-    def train(self, sources, targets, epochs, batch_size=4, stop_loss=None, batches_per_epoch=100, report_per_x_batches=20):
+    def train(self, sources, targets, epochs, batch_size=4, stop_loss=None, batches_per_epoch=100,
+              report_per_x_batches=20, mask_characters=None):
+        if mask_characters is None:
+            mask_characters = []
+
         self.model.train()
         start_time = time.time()
         for epoch in range(epochs):
@@ -54,15 +66,19 @@ class Seq2seqModel(object):
             batch_losses = []
             nr_of_batches_processed = 0
             for _ in range(batches_per_epoch):
-                batch_sources, batch_targets = get_batch(
+                batch_sources, batch_targets, source_masks, target_masks = get_batch(
                     sources,
                     targets,
-                    batch_size=batch_size)
+                    batch_size=batch_size,
+                    mask_characters=mask_characters)
+
+                print([self.dictionary.data_to_word(x) for x in batch_sources[0]])
 
                 batch_sources = torch.tensor(batch_sources).long().to(get_device())
                 batch_targets = torch.tensor(batch_targets).long().to(get_device())
-                src_mask = torch.ones(batch_size, batch_sources.shape[1]).bool().to(get_device())
-                tgt_mask = torch.ones(batch_size, batch_targets.shape[1]).bool().to(get_device())
+
+                src_mask = torch.tensor(source_masks).bool().to(get_device())
+                tgt_mask = torch.tensor(target_masks).bool().to(get_device())
 
                 loss = self.model(batch_sources, batch_targets, src_mask, tgt_mask)
                 loss.backward()
@@ -79,7 +95,8 @@ class Seq2seqModel(object):
                 epoch_losses.append(loss_item)
 
                 if nr_of_batches_processed % report_per_x_batches == 0:
-                    print(f"Processed {nr_of_batches_processed} / {len(batch_sources)} with loss {np.mean(batch_losses)}.")
+                    print(
+                        f"Processed {nr_of_batches_processed} / {len(batch_sources)} with loss {np.mean(batch_losses)}.")
                     batch_losses = []
 
             epoch_loss = np.mean(epoch_losses)

@@ -9,19 +9,13 @@ class DictionaryGenerator(object):
         Creates a dictionary for a REMI mapping of a midi file, with added instruments.
         """
 
-        dictionary = [{}, {}]
-
-        def append_to_dictionary(word):
-            if word not in dictionary[0]:
-                offset = len(dictionary[0])
-                dictionary[0].update({word: offset})
-                dictionary[1].update({offset: word})
+        dictionary = Dictionary()
 
         # First word is reserved for padding
-        append_to_dictionary("pad")
-        append_to_dictionary("mask")
+        dictionary.append("pad")
+        dictionary.append("mask")
 
-        append_to_dictionary('Bar_None')
+        dictionary.append('Bar_None')
 
         chords = ['Chord_A#:aug', 'Chord_A#:dim', 'Chord_A#:dom', 'Chord_A#:maj', 'Chord_A#:min', 'Chord_A:aug',
                   'Chord_A:dim', 'Chord_A:dom', 'Chord_A:maj', 'Chord_A:min', 'Chord_B:aug', 'Chord_B:dim',
@@ -43,27 +37,27 @@ class DictionaryGenerator(object):
         tempo_classes = ['Tempo Class_fast', 'Tempo Class_mid', 'Tempo Class_slow']
 
         for chord in chords:
-            append_to_dictionary(chord)
+            dictionary.append(chord)
 
         for i in range(129):
-            append_to_dictionary(f"Instrument_{i}")
+            dictionary.append(f"Instrument_{i}")
 
         for i in range(64):
-            append_to_dictionary(f"Note Duration_{i}")
+            dictionary.append(f"Note Duration_{i}")
 
         for i in range(128):
-            append_to_dictionary(f"Note On_{i}")
+            dictionary.append(f"Note On_{i}")
 
         for i in range(32):
-            append_to_dictionary(f"Note Velocity_{i}")
+            dictionary.append(f"Note Velocity_{i}")
 
         for i in range(16):
-            append_to_dictionary(f"Position_{i + 1}/16")
+            dictionary.append(f"Position_{i + 1}/16")
 
         for tempo_class in tempo_classes:
-            append_to_dictionary(tempo_class)
+            dictionary.append(tempo_class)
 
         for i in range(64):
-            append_to_dictionary(f"Tempo Value_{i}")
+            dictionary.append(f"Tempo Value_{i}")
 
-        return Dictionary(dictionary[0], dictionary[1])
+        return dictionary
