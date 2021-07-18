@@ -44,7 +44,7 @@ class Seq2seqModel(object):
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
-    def train(self, sources, targets, epochs, batch_size=4, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=20):
+    def train(self, sources, targets, epochs, batch_size=4, stop_loss=None, batches_per_epoch=100, report_per_x_batches=20):
         self.model.train()
         start_time = time.time()
         for epoch in range(epochs):
@@ -59,14 +59,10 @@ class Seq2seqModel(object):
                     targets,
                     batch_size=batch_size)
 
-                print('----------------------')
-                print(batch_sources)
-                print(batch_targets)
-
                 batch_sources = torch.tensor(batch_sources).long().to(get_device())
                 batch_targets = torch.tensor(batch_targets).long().to(get_device())
-                src_mask = torch.ones(batch_sources.shape[0], batch_sources.shape[1]).bool().cuda()
-                tgt_mask = torch.ones(batch_targets.shape[0], batch_targets.shape[1]).bool().cuda()
+                src_mask = torch.ones(batch_size, batch_sources.shape[1]).bool().to(get_device())
+                tgt_mask = torch.ones(batch_size, batch_targets.shape[1]).bool().to(get_device())
 
                 loss = self.model(batch_sources, batch_targets, src_mask, tgt_mask)
                 loss.backward()
@@ -87,7 +83,7 @@ class Seq2seqModel(object):
                     batch_losses = []
 
             epoch_loss = np.mean(epoch_losses)
-            if epoch_loss <= stop_loss:
+            if stop_loss is not None and epoch_loss <= stop_loss:
                 print(f"Loss of {epoch_loss} was lower than stop loss of {stop_loss}. Stopping training.")
                 return
 

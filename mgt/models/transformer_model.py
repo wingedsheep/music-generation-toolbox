@@ -56,7 +56,7 @@ class TransformerModel(object):
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
-    def train(self, x_train, epochs, batch_size=4, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=20):
+    def train(self, x_train, epochs, batch_size=4, stop_loss=None, batches_per_epoch=100, report_per_x_batches=20):
         self.model.train()
         start_time = time.time()
         for epoch in range(epochs):
@@ -92,7 +92,7 @@ class TransformerModel(object):
                     batch_losses = []
 
             epoch_loss = np.mean(epoch_losses)
-            if epoch_loss <= stop_loss:
+            if stop_loss is not None and epoch_loss <= stop_loss:
                 print(f"Loss of {epoch_loss} was lower than stop loss of {stop_loss}. Stopping training.")
                 return
 
