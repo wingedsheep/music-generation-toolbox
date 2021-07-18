@@ -108,7 +108,7 @@ class Seq2seqModel(object):
                 sample = self.model.generate(seq_in, start_sequence, seq_len=1)
                 sample = sample.cpu().detach().numpy()[0]
                 if sample[0] == eos_character:
-                    return
+                    return result
                 else:
                     result.append(sample[0])
         else:
