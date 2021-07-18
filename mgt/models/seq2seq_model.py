@@ -102,6 +102,7 @@ class Seq2seqModel(object):
             while len(result) < max_output_length:
                 start_sequence = sequence_out_start
                 start_sequence.extend(result)
+                print(start_sequence)
                 start_sequence = start_sequence[-self.max_output_sequence_length:]
                 start_sequence = torch.tensor([start_sequence]).long().to(get_device())
                 seq_in = torch.tensor([sequence_in]).long().to(get_device())
