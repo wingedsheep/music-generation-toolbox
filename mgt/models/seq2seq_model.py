@@ -7,7 +7,7 @@ import time
 import torch
 import numpy as np
 
-from x_transformers import TransformerWrapper, Decoder, AutoregressiveWrapper, XTransformer
+from x_transformers import XTransformer
 
 from mgt.datamanagers.data_manager import Dictionary
 
@@ -28,10 +28,10 @@ class Seq2seqModel(object):
                  max_input_sequence_length=512,
                  max_output_sequence_length=512,
                  learning_rate=1e-4,
-                 dropout=0.1,
+                 dropout=0.0,
                  dim=512,
-                 depth=12,
-                 heads=8
+                 depth=4,
+                 heads=3
                  ):
         self.dictionary = dictionary
         self.learning_rate = learning_rate
