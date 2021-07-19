@@ -4,6 +4,7 @@ import numpy as np
 
 from mgt.datamanagers.remi.dictionary_generator import DictionaryGenerator
 from mgt.models.seq2seq_model import Seq2seqModel
+from tqdm import tqdm
 
 
 class RemiMidiToMelodyModel(object):
@@ -96,9 +97,15 @@ class RemiMidiToMelodyModel(object):
     def convert(self, remi_midi):
         inputs = self.prepare_data(remi_midi)
         converted_song = []
+        pbar = tqdm(total=len(inputs))
+
+        progress = 0
         for x in inputs:
             generated = self.model.generate(x, max_output_length=self.max_sequence_length,
                                             eos_character=self.dictionary.word_to_data("seq_end"))
+
+            progress += 1
+            pbar.update(progress)
 
             # Remove unused characters in REMI
             result = list(filter(lambda word:
@@ -110,4 +117,5 @@ class RemiMidiToMelodyModel(object):
             # Remove last Bar_None char
             converted_song.extend(result[:-1])
 
+        pbar.close()
         return converted_song
