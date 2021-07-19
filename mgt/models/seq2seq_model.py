@@ -114,6 +114,7 @@ class Seq2seqModel(object):
 
         # TODO make configurable
         src_mask = [0 if x in self.dictionary.word_to_data("pad") else 1 for x in seq_in]
+        src_mask = torch.tensor(src_mask).bool().to(get_device())
 
         seq_out_start = torch.tensor([sequence_out_start]).long().to(get_device())
 
