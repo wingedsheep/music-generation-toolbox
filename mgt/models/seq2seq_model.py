@@ -110,7 +110,10 @@ class Seq2seqModel(object):
             sequence_out_start = [0]
 
         self.model.eval()
+
         seq_in = torch.tensor([sequence_in]).long().to(get_device())
+
+        print(sequence_in)
 
         src_mask = torch.ones_like(seq_in).bool().to(get_device())
 
