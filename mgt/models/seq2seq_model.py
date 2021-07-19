@@ -23,8 +23,8 @@ def get_batch(sources, targets, batch_size, mask_characters=None):
 
     sources, targets = [sources[i] for i in indices], [targets[i] for i in indices]
 
-    sources_mask = [[1 if x in mask_characters else 0 for x in y] for y in sources]
-    targets_mask = [[1 if x in mask_characters else 0 for x in y] for y in targets]
+    sources_mask = [[0 if x in mask_characters else 1 for x in y] for y in sources]
+    targets_mask = [[0 if x in mask_characters else 1 for x in y] for y in targets]
 
     return sources, targets, sources_mask, targets_mask
 
