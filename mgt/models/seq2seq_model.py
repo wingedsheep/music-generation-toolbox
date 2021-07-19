@@ -105,33 +105,16 @@ class Seq2seqModel(object):
             running_time = (time.time() - start_time)
             print(f"Loss after epoch {epoch + 1} is {epoch_loss}. Running time: {running_time}")
 
-    def generate(self, sequence_in, sequence_out_start=None, max_output_length=100, eos_character=None):
+    def generate(self, sequence_in, sequence_out_start=None, max_output_length=100, eos_token=None):
         if sequence_out_start is None:
             sequence_out_start = [0]
 
         self.model.eval()
         seq_in = torch.tensor([sequence_in]).long().to(get_device())
 
-        result = []
-        if eos_character is not None:
-            while len(result) < max_output_length:
-                start_sequence = sequence_out_start.copy()
-                start_sequence.extend(result)
-                start_sequence = start_sequence[-self.max_output_sequence_length:]
-                start_sequence = torch.tensor([start_sequence]).long().to(get_device())
-                seq_in = torch.tensor([sequence_in]).long().to(get_device())
-                sample = self.model.generate(seq_in, start_sequence, seq_len=1)
-                sample = sample.cpu().detach().numpy()[0]
-                if sample[0] == eos_character:
-                    return result
-                else:
-                    result.append(sample[0])
-        else:
-            seq_out_start = torch.tensor([sequence_out_start]).long().to(get_device())
-            sample = self.model.generate(seq_in, seq_out_start, seq_len=max_output_length)
-            result = sample.cpu().detach().numpy()[0]
-
-        return result
+        seq_out_start = torch.tensor([sequence_out_start]).long().to(get_device())
+        sample = self.model.decoder.generate(seq_in, seq_out_start, seq_len=max_output_length, eos_token=eos_token)
+        return sample.cpu().detach().numpy()[0]
 
     def create_model(self):
         return XTransformer(

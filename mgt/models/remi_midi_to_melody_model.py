@@ -105,7 +105,7 @@ class RemiMidiToMelodyModel(object):
         progress = 0
         for x in inputs:
             generated = self.model.generate(x, max_output_length=self.max_sequence_length,
-                                            eos_character=self.dictionary.word_to_data("seq_end"))
+                                            eos_token=self.dictionary.word_to_data("seq_end"))
 
             progress += 1
             pbar.update(progress)
