@@ -112,18 +112,13 @@ class Seq2seqModel(object):
         self.model.eval()
 
         seq_in = torch.tensor([sequence_in]).long().to(get_device())
-
-        print(sequence_in)
-
         src_mask = torch.ones_like(seq_in).bool().to(get_device())
 
         seq_out_start = torch.tensor([sequence_out_start]).long().to(get_device())
 
         encodings = self.model.encoder(seq_in, return_embeddings=True, mask=src_mask)
         sample = self.model.decoder.generate(seq_out_start, max_output_length, context=encodings, context_mask=src_mask, eos_token=eos_token)
-        result = sample.cpu().detach().numpy()[0]
-        print(result)
-        return result
+        return sample.cpu().detach().numpy()[0]
 
     def create_model(self):
         return XTransformer(
