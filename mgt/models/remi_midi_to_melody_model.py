@@ -97,6 +97,9 @@ class RemiMidiToMelodyModel(object):
     def convert(self, remi_midi):
         inputs = self.prepare_data(remi_midi)
         converted_song = []
+
+        print("Extracting melody.")
+
         pbar = tqdm(total=len(inputs))
 
         progress = 0
@@ -113,6 +116,8 @@ class RemiMidiToMelodyModel(object):
                                  word != self.dictionary.word_to_data("seq_end") and
                                  word != self.dictionary.word_to_data("pad")
                                  , generated))
+
+            print(result)
 
             # Remove last Bar_None char
             converted_song.extend(result[:-1])
