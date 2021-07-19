@@ -108,7 +108,7 @@ class RemiMidiToMelodyModel(object):
                                             sequence_out_start=[self.dictionary.word_to_data("seq_start")],
                                             eos_token=self.dictionary.word_to_data("seq_end"),
                                             temperature=1.0,
-                                            filter_thres=1.0)
+                                            filter_thres=0.998)  # weird hack to get top 1
 
             progress += 1
             pbar.update(progress)
