@@ -117,7 +117,7 @@ class RemiMidiToMelodyModel(object):
                                  word != self.dictionary.word_to_data("pad")
                                  , generated))
 
-            print([self.dictionary.data_to_word(x) for x in generated])
+            print([self.dictionary.data_to_word(x) for x in result])
 
             # Remove last Bar_None char
             converted_song.extend(result[:-1])
