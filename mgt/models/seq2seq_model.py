@@ -75,8 +75,8 @@ class Seq2seqModel(object):
                 batch_sources = torch.tensor(batch_sources).long().to(get_device())
                 batch_targets = torch.tensor(batch_targets).long().to(get_device())
 
-                src_mask = torch.tensor(source_masks).bool().to(get_device())
-                tgt_mask = torch.tensor(target_masks).bool().to(get_device())
+                src_mask = torch.ones_like(batch_sources).bool().to(get_device())
+                tgt_mask = torch.ones_like(batch_targets).bool().to(get_device())
 
                 loss = self.model(batch_sources, batch_targets, src_mask, tgt_mask)
                 loss.backward()
@@ -112,9 +112,7 @@ class Seq2seqModel(object):
         self.model.eval()
         seq_in = torch.tensor([sequence_in]).long().to(get_device())
 
-        # TODO make configurable
-        src_mask = [0 if x == self.dictionary.word_to_data("pad") else 1 for x in sequence_in]
-        src_mask = torch.tensor([src_mask]).bool().to(get_device())
+        src_mask = torch.ones_like(seq_in).bool().to(get_device())
 
         seq_out_start = torch.tensor([sequence_out_start]).long().to(get_device())
 
