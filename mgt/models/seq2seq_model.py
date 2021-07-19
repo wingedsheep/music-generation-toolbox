@@ -112,8 +112,13 @@ class Seq2seqModel(object):
         self.model.eval()
         seq_in = torch.tensor([sequence_in]).long().to(get_device())
 
+        # TODO make configurable
+        src_mask = [0 if x in self.dictionary.word_to_data("pad") else 1 for x in seq_in]
+
         seq_out_start = torch.tensor([sequence_out_start]).long().to(get_device())
-        sample = self.model.decoder.generate(seq_in, seq_out_start, seq_len=max_output_length, eos_token=eos_token)
+
+        encodings = self.model.encoder(seq_in, return_embeddings=True, mask=src_mask)
+        sample = self.model.decoder.generate(encodings, seq_out_start, seq_len=max_output_length, eos_token=eos_token)
         return sample.cpu().detach().numpy()[0]
 
     def create_model(self):
