@@ -107,7 +107,8 @@ class RemiMidiToMelodyModel(object):
             generated = self.model.generate(x, max_output_length=self.max_sequence_length,
                                             sequence_out_start=[self.dictionary.word_to_data("seq_start")],
                                             eos_token=self.dictionary.word_to_data("seq_end"),
-                                            temperature=0.0)
+                                            temperature=1.0,
+                                            filter_thres=1.0)
 
             progress += 1
             pbar.update(progress)
