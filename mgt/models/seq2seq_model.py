@@ -105,7 +105,12 @@ class Seq2seqModel(object):
             running_time = (time.time() - start_time)
             print(f"Loss after epoch {epoch + 1} is {epoch_loss}. Running time: {running_time}")
 
-    def generate(self, sequence_in, sequence_out_start=None, max_output_length=100, eos_token=None):
+    def generate(self, sequence_in,
+                 sequence_out_start=None,
+                 max_output_length=100,
+                 eos_token=None,
+                 temperature=1.,
+                 filter_thres=0.9):
         if sequence_out_start is None:
             sequence_out_start = [0]
 
@@ -117,7 +122,12 @@ class Seq2seqModel(object):
         seq_out_start = torch.tensor([sequence_out_start]).long().to(get_device())
 
         encodings = self.model.encoder(seq_in, return_embeddings=True, mask=src_mask)
-        sample = self.model.decoder.generate(seq_out_start, max_output_length, context=encodings, context_mask=src_mask, eos_token=eos_token)
+        sample = self.model.decoder.generate(seq_out_start, max_output_length,
+                                             context=encodings,
+                                             context_mask=src_mask,
+                                             eos_token=eos_token,
+                                             temperature=temperature,
+                                             filter_thres=filter_thres)
         return sample.cpu().detach().numpy()[0]
 
     def create_model(self):
