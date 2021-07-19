@@ -15,7 +15,7 @@ from mgt.datamanagers.data_manager import Dictionary
 
 
 def pad(array, max_sequence_length, padding_character=0):
-    return list(np.repeat([padding_character], max_sequence_length)) + array
+    return list(np.repeat(padding_character, max_sequence_length)) + array
 
 
 def get_batch(training_data, batch_size, max_sequence_length):

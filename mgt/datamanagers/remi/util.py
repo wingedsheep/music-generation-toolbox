@@ -32,7 +32,7 @@ class Item(object):
 
 
 # read notes and tempo changes from midi (assume there is only one track)
-def read_items(file_path, transposition_steps=0, map_tracks_to_instruments=None):
+def read_items(file_path, transposition_steps=0, map_tracks_to_instruments=None, allow_empty_bars=False):
     if map_tracks_to_instruments is None:
         map_tracks_to_instruments = {}
 
@@ -133,7 +133,8 @@ def extract_chords(items: [Item]):
     return output
 
 
-def extract_events(input_path, transposition_steps=0, map_tracks_to_instruments=None, use_chords=True):
+def extract_events(input_path, transposition_steps=0, map_tracks_to_instruments=None, use_chords=True,
+                   allow_empty_bars=False):
     if map_tracks_to_instruments is None:
         map_tracks_to_instruments = {}
 
@@ -153,7 +154,8 @@ def extract_events(input_path, transposition_steps=0, map_tracks_to_instruments=
     else:
         items = tempo_items + note_items
     groups = group_items(items, max_time)
-    events = item2event(groups)
+    events = item2event(groups,
+                        allow_empty_bars=allow_empty_bars)
     return events
 
 
@@ -186,12 +188,13 @@ class Event(object):
 
 
 # item to event
-def item2event(groups):
+def item2event(groups, allow_empty_bars=False):
     events = []
     n_downbeat = 0
     for i in range(len(groups)):
         if 'Note' not in [item.name for item in groups[i][1:-1]]:
-            continue
+            if not allow_empty_bars:
+                continue
         bar_st, bar_et = groups[i][0], groups[i][-1]
         n_downbeat += 1
         events.append(Event(
@@ -445,11 +448,14 @@ def write_midi(words, word2event, output_path, prompt_path=None, bars_in_prompt=
     print(f"Written midi to {output_path}")
 
 
-def extract_data(path, dictionary, transposition_steps=0, map_tracks_to_instruments=None, use_chords=True):
+def extract_data(path, dictionary, transposition_steps=0, map_tracks_to_instruments=None, use_chords=True,
+                 allow_empty_bars=False):
     if map_tracks_to_instruments is None:
         map_tracks_to_instruments = {}
     print(f"Extracting data for {path}")
-    events = extract_events(path, transposition_steps=transposition_steps, map_tracks_to_instruments=map_tracks_to_instruments, use_chords=use_chords)
+    events = extract_events(path, transposition_steps=transposition_steps,
+                            map_tracks_to_instruments=map_tracks_to_instruments, use_chords=use_chords,
+                            allow_empty_bars=allow_empty_bars)
     words = list(map(lambda x: '{}_{}'.format(x.name, x.value), events))
     data = list(map(lambda x: dictionary.word_to_data(x), words))
     return data

@@ -16,17 +16,17 @@ def run():
     output_path = '../data/seq2seq/Miley Cyrus - Wrecking ball melody.mid'
     output_path = os.path.join(os.path.dirname(__file__), output_path)
 
-    datamanager = RemiDataManager()
+    datamanager = RemiDataManager(use_chords=False, allow_empty_bars=True)
 
     sources = datamanager.prepare_data([input_path])
     targets = datamanager.prepare_data([output_path])
 
-    model = RemiMidiToMelodyModel()
+    model = RemiMidiToMelodyModel(max_measures_per_step=1)
     model.train(
         sources=sources.data,
         targets=targets.data,
-        epochs=25,
-        batch_size=1)
+        epochs=5,
+        batch_size=2)
 
     result = model.convert(sources.data[0])
     midi = datamanager.to_midi(result)

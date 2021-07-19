@@ -20,7 +20,9 @@ def get_batch(sources, targets, batch_size, mask_characters=None):
     if mask_characters is None:
         mask_characters = []
     indices = random.sample(list(range(len(sources))), batch_size)
-    print(indices)
+
+    print(f"selecting items {indices} from {len(sources)}, {len(targets)} training samples.")
+
     sources, targets = [sources[i] for i in indices], [targets[i] for i in indices]
 
     sources_mask = [[0 if x in mask_characters else 1 for x in y] for y in sources]
@@ -72,7 +74,7 @@ class Seq2seqModel(object):
                     batch_size=batch_size,
                     mask_characters=mask_characters)
 
-                print([self.dictionary.data_to_word(x) for x in batch_sources[0]])
+                print([len(x) for x in batch_sources])
 
                 batch_sources = torch.tensor(batch_sources).long().to(get_device())
                 batch_targets = torch.tensor(batch_targets).long().to(get_device())
@@ -96,7 +98,7 @@ class Seq2seqModel(object):
 
                 if nr_of_batches_processed % report_per_x_batches == 0:
                     print(
-                        f"Processed {nr_of_batches_processed} / {len(batch_sources)} with loss {np.mean(batch_losses)}.")
+                        f"Processed {nr_of_batches_processed} / {batches_per_epoch} with loss {np.mean(batch_losses)}.")
                     batch_losses = []
 
             epoch_loss = np.mean(epoch_losses)

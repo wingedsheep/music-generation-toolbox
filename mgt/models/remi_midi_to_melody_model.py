@@ -40,13 +40,23 @@ class RemiMidiToMelodyModel(object):
 
     def train(self, sources, targets, epochs, batch_size=4, stop_loss=None, batches_per_epoch=100,
               report_per_x_batches=20):
-        inputs = []
-        for source in sources:
-            inputs.extend(self.prepare_data(source))
 
+        if len(sources) != len(targets):
+            print(f"Number of sources should match number targets. Sources = {len(sources)}, targets = {len(targets)}")
+            return
+
+        inputs = []
         outputs = []
-        for target in targets:
-            outputs.extend(self.prepare_data(target))
+        for i in range(len(sources)):
+            prepared_input = self.prepare_data(sources[i])
+            inputs.extend(prepared_input)
+            outputs.extend(self.prepare_data(targets[i], min_measures=len(prepared_input)))
+
+        max_input_length = max([len(x) for x in inputs])
+        max_output_length = max([len(x) for x in outputs])
+        if max_input_length > self.max_sequence_length or max_output_length > self.max_sequence_length:
+            print(f"Max length of input or output should not exceed max sequence length. Max input length = {max_input_length}, max output length = {max_output_length}")
+            return
 
         self.model.train(inputs, outputs, epochs,
                          batch_size=batch_size,
@@ -55,7 +65,7 @@ class RemiMidiToMelodyModel(object):
                          report_per_x_batches=report_per_x_batches,
                          mask_characters=[self.dictionary.word_to_data("pad")])
 
-    def prepare_data(self, remi_data):
+    def prepare_data(self, remi_data, min_measures=0):
         parts = []
         bars = -1
         current_part = []
@@ -69,10 +79,19 @@ class RemiMidiToMelodyModel(object):
                     parts.append(current_part)
                     bars = 0
                     current_part = [self.dictionary.word_to_data("Bar_None")]
+
+        while len(parts) < min_measures:
+            parts.append([
+                self.dictionary.word_to_data("seq_start"),
+                self.dictionary.word_to_data("Bar_None"),
+                self.dictionary.word_to_data("Bar_None"),
+                self.dictionary.word_to_data("seq_end")
+            ])
+
         return list(map(lambda x: self.pad(x, self.max_sequence_length), parts))
 
     def pad(self, sequence, max_sequence_length):
-        return sequence + list(np.repeat([self.dictionary.word_to_data("pad")], max_sequence_length))
+        return sequence + list(np.repeat(0, max(0, max_sequence_length - len(sequence))))
 
     def convert(self, remi_midi):
         inputs = self.prepare_data(remi_midi)

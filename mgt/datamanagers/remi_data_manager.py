@@ -8,7 +8,7 @@ from mgt.datamanagers.remi.dictionary_generator import DictionaryGenerator
 
 class RemiDataManager(DataManager):
 
-    def __init__(self, use_chords=True, transposition_steps=None, map_tracks_to_instruments=None):
+    def __init__(self, use_chords=True, transposition_steps=None, map_tracks_to_instruments=None, allow_empty_bars=False):
         if map_tracks_to_instruments is None:
             map_tracks_to_instruments = {}
         if transposition_steps is None:
@@ -17,6 +17,7 @@ class RemiDataManager(DataManager):
         self.transposition_steps = transposition_steps
         self.map_tracks_to_instruments = map_tracks_to_instruments
         self.dictionary = DictionaryGenerator.create_dictionary()
+        self.allow_empty_bars = allow_empty_bars
 
     def prepare_data(self, midi_paths) -> DataSet:
         training_data = []
@@ -27,7 +28,8 @@ class RemiDataManager(DataManager):
                                              transposition_steps=transposition_step,
                                              map_tracks_to_instruments=self.map_tracks_to_instruments,
                                              dictionary=self.dictionary,
-                                             use_chords=self.use_chords)
+                                             use_chords=self.use_chords,
+                                             allow_empty_bars=self.allow_empty_bars)
                     training_data.append(data)
                 except Exception as e:
                     print(e)
