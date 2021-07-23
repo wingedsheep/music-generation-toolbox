@@ -44,12 +44,12 @@ class RoutingTransformerModel(object):
 
     def __init__(self,
                  dictionary: Dictionary,
-                 max_sequence_length=512,
+                 max_sequence_length=4096,
                  learning_rate=1e-4,
-                 dropout=0.2,
+                 dropout=0.1,
                  dim=512,
-                 depth=12,
-                 heads=8,
+                 depth=6,
+                 heads=4,
                  window_size=256
                  ):
         self.dictionary = dictionary
