@@ -107,6 +107,7 @@ class TransformerModel(object):
             print(f"Loss after epoch {epoch + 1} is {epoch_loss}. Running time: {running_time}")
 
     def generate(self, output_length=100, temperature=1., filter_treshold=0.9, prompt=None):
+        print(f"Generating a new song with {output_length} characters.")
         if prompt is None:
             prompt = [0]
 
