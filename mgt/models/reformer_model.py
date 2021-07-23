@@ -22,7 +22,7 @@ def get_batch(training_data, batch_size, max_sequence_length):
     indices = []
     for i in range(batch_size):
         song_index = random.randint(0, len(training_data) - 1)
-        starting_index = random.randint(0, len(training_data[song_index]) - 1)
+        starting_index = random.randint(0, len(training_data[song_index]) - 2)
         indices.append((song_index, starting_index))
 
     sequences = []
@@ -93,7 +93,7 @@ class ReformerModel(object):
                 epoch_losses.append(loss_item)
 
                 if nr_of_batches_processed % report_per_x_batches == 0:
-                    print(f"Processed {nr_of_batches_processed} / {len(batches)} with loss {np.mean(batch_losses)}.")
+                    print(f"Processed {nr_of_batches_processed} / {batches_per_epoch} with loss {np.mean(batch_losses)}.")
                     batch_losses = []
 
             epoch_loss = np.mean(epoch_losses)
