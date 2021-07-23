@@ -156,9 +156,9 @@ class RoutingTransformerModel(object):
         }, path)
 
     @staticmethod
-    def load_checkpoint(path) -> TransformerModel:
+    def load_checkpoint(path) -> RoutingTransformerModel:
         checkpoint = torch.load(path)
-        model = TransformerModel(
+        model = RoutingTransformerModel(
             dictionary=checkpoint['dictionary'],
             max_sequence_length=checkpoint['max_sequence_length'],
             learning_rate=checkpoint['learning_rate'],
