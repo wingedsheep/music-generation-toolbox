@@ -76,7 +76,7 @@ class RoutingTransformerModel(object):
 
                 print(torch_batch.shape)
 
-                loss = self.model(torch_batch)
+                loss = self.model(torch_batch, return_loss=True)
                 loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
