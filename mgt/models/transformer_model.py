@@ -20,7 +20,7 @@ def get_batch(training_data, batch_size, max_sequence_length):
     indices = []
     for i in range(batch_size):
         song_index = random.randint(0, len(training_data) - 1)
-        starting_index = random.randint(0, len(training_data[song_index]) - 1)
+        starting_index = random.randint(0, len(training_data[song_index]) - 2)
         indices.append((song_index, starting_index))
 
     sequences = []
@@ -72,6 +72,7 @@ class TransformerModel(object):
                     max_sequence_length=self.max_sequence_length)
 
                 torch_batch = torch.tensor(batch).long().to(get_device())
+                print(torch_batch.shape)
 
                 loss = self.model(torch_batch)
                 loss.backward()
