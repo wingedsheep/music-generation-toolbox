@@ -12,19 +12,13 @@ from x_transformers import TransformerWrapper, Decoder, AutoregressiveWrapper
 from mgt.datamanagers.data_manager import Dictionary
 
 
-def create_chunks(iterable, chunk_size=1):
-    array_length = len(iterable)
-    for ndx in range(0, array_length, chunk_size):
-        yield iterable[ndx:min(ndx + chunk_size, array_length)]
-
-
 def pad(array, max_sequence_length, padding_character=0):
-    return list(np.repeat([padding_character], max_sequence_length)) + array
+    return list(np.repeat(padding_character, max_sequence_length)) + array
 
 
-def get_batches(training_data, batches_per_epoch, batch_size, max_sequence_length):
+def get_batch(training_data, batch_size, max_sequence_length):
     indices = []
-    for i in range(batches_per_epoch * batch_size):
+    for i in range(batch_size):
         song_index = random.randint(0, len(training_data) - 1)
         starting_index = random.randint(0, len(training_data[song_index]) - 1)
         indices.append((song_index, starting_index))
@@ -34,7 +28,7 @@ def get_batches(training_data, batches_per_epoch, batch_size, max_sequence_lengt
         padded_song = pad(training_data[selection[0]], max_sequence_length)
         sequences.append(padded_song[selection[1]: selection[1] + max_sequence_length + 1])
 
-    return list(create_chunks(sequences, chunk_size=batch_size))
+    return sequences
 
 
 def get_device():
@@ -47,7 +41,7 @@ class TransformerModel(object):
                  dictionary: Dictionary,
                  max_sequence_length=512,
                  learning_rate=1e-4,
-                 dropout=0.2,
+                 dropout=0.1,
                  dim=512,
                  depth=12,
                  heads=8
@@ -62,22 +56,21 @@ class TransformerModel(object):
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
-    def train(self, x_train, epochs, batch_size=4, stop_loss=0.1, batches_per_epoch=100, report_per_x_batches=20):
+    def train(self, x_train, epochs, batch_size=4, stop_loss=None, batches_per_epoch=100, report_per_x_batches=20):
         self.model.train()
         start_time = time.time()
         for epoch in range(epochs):
             print(f"Training epoch {epoch + 1}.")
 
-            batches = get_batches(
-                x_train,
-                batches_per_epoch=batches_per_epoch,
-                batch_size=batch_size,
-                max_sequence_length=self.max_sequence_length)
-
             epoch_losses = []
             batch_losses = []
             nr_of_batches_processed = 0
-            for batch in batches:
+            for _ in range(batches_per_epoch):
+                batch = get_batch(
+                    x_train,
+                    batch_size=batch_size,
+                    max_sequence_length=self.max_sequence_length)
+
                 torch_batch = torch.tensor(batch).long().to(get_device())
 
                 loss = self.model(torch_batch)
@@ -95,11 +88,11 @@ class TransformerModel(object):
                 epoch_losses.append(loss_item)
 
                 if nr_of_batches_processed % report_per_x_batches == 0:
-                    print(f"Processed {nr_of_batches_processed} / {len(batches)} with loss {np.mean(batch_losses)}.")
+                    print(f"Processed {nr_of_batches_processed} / {batches_per_epoch} with loss {np.mean(batch_losses)}.")
                     batch_losses = []
 
             epoch_loss = np.mean(epoch_losses)
-            if epoch_loss <= stop_loss:
+            if stop_loss is not None and epoch_loss <= stop_loss:
                 print(f"Loss of {epoch_loss} was lower than stop loss of {stop_loss}. Stopping training.")
                 return
 
@@ -157,13 +150,13 @@ class TransformerModel(object):
     def load_checkpoint(path) -> TransformerModel:
         checkpoint = torch.load(path)
         model = TransformerModel(
-            checkpoint['dictionary'],
-            checkpoint['max_sequence_length'],
-            checkpoint['learning_rate'],
-            checkpoint['dropout'],
-            checkpoint['dim'],
-            checkpoint['depth'],
-            checkpoint['heads']
+            dictionary=checkpoint['dictionary'],
+            max_sequence_length=checkpoint['max_sequence_length'],
+            learning_rate=checkpoint['learning_rate'],
+            dropout=checkpoint['dropout'],
+            dim=checkpoint['dim'],
+            depth=checkpoint['depth'],
+            heads=checkpoint['heads']
         )
 
         model.model.load_state_dict(checkpoint['model_state_dict'])
