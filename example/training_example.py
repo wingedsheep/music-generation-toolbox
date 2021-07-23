@@ -1,5 +1,5 @@
 from mgt.datamanagers.time_shift_data_manager import TimeShiftDataManager
-from mgt.models.reformer_model import ReformerModel
+from mgt.models.transformer_model import TransformerModel
 
 import os
 import glob
@@ -17,7 +17,7 @@ def run():
     time_shift_data_manager = TimeShiftDataManager()
     dataset = time_shift_data_manager.prepare_data(midis)
 
-    model = ReformerModel(dataset.dictionary)
+    model = TransformerModel(dataset.dictionary)
 
     print("Created model. Starting training for 50 epochs.")
     model.train(x_train=dataset.data, epochs=50, stop_loss=0.1)

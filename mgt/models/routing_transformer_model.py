@@ -7,9 +7,8 @@ import time
 import torch
 import numpy as np
 
-from x_transformers import TransformerWrapper, Decoder, AutoregressiveWrapper
-
 from mgt.datamanagers.data_manager import Dictionary
+from routing_transformer import RoutingTransformerLM, AutoregressiveWrapper
 
 
 def pad(array, max_sequence_length, padding_character=0):
@@ -35,16 +34,17 @@ def get_device():
     return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-class TransformerModel(object):
+class RoutingTransformerModel(object):
 
     def __init__(self,
                  dictionary: Dictionary,
-                 max_sequence_length=512,
+                 max_sequence_length=4096,
                  learning_rate=1e-4,
                  dropout=0.1,
                  dim=512,
-                 depth=12,
-                 heads=8
+                 depth=6,
+                 heads=4,
+                 window_size=256
                  ):
         self.dictionary = dictionary
         self.learning_rate = learning_rate
@@ -53,6 +53,7 @@ class TransformerModel(object):
         self.dim = dim
         self.depth = depth
         self.heads = heads
+        self.window_size = window_size
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
@@ -73,7 +74,7 @@ class TransformerModel(object):
 
                 torch_batch = torch.tensor(batch).long().to(get_device())
 
-                loss = self.model(torch_batch)
+                loss = self.model(torch_batch, return_loss=True, randomly_truncate_sequence=True)
                 loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
@@ -111,21 +112,22 @@ class TransformerModel(object):
         return sample.cpu().detach().numpy()[0]
 
     def create_model(self):
-        model = AutoregressiveWrapper(TransformerWrapper(
+        model = RoutingTransformerLM(
             num_tokens=self.dictionary.size(),
+            dim=self.dim,
+            heads=self.heads,
+            depth=self.depth,
+            window_size=self.window_size,
             max_seq_len=self.max_sequence_length,
-            attn_layers=Decoder(
-                dim=self.dim,
-                depth=self.depth,
-                heads=self.heads,
-                attn_dropout=self.dropout,  # dropout post-attention
-                ff_dropout=self.dropout,  # feedforward dropout
-                rotary_pos_emb=True
-            )
-        ),
-            ignore_index=0,
-            pad_value=0
-        ).to(get_device())
+            attn_dropout=self.dropout,
+            ff_dropout=self.dropout,
+            causal=True
+        )
+
+        model = AutoregressiveWrapper(model,
+                                      ignore_index=0,
+                                      pad_value=0
+                                      ).to(get_device())
 
         return model
 
@@ -141,21 +143,23 @@ class TransformerModel(object):
             'dropout': self.dropout,
             'dim': self.dim,
             'depth': self.depth,
+            'window_size': self.window_size,
             'heads': self.heads,
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
         }, path)
 
     @staticmethod
-    def load_checkpoint(path) -> TransformerModel:
+    def load_checkpoint(path) -> RoutingTransformerModel:
         checkpoint = torch.load(path)
-        model = TransformerModel(
+        model = RoutingTransformerModel(
             dictionary=checkpoint['dictionary'],
             max_sequence_length=checkpoint['max_sequence_length'],
             learning_rate=checkpoint['learning_rate'],
             dropout=checkpoint['dropout'],
             dim=checkpoint['dim'],
             depth=checkpoint['depth'],
+            window_size=checkpoint['window_size'],
             heads=checkpoint['heads']
         )
 
