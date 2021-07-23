@@ -4,6 +4,11 @@ Toolbox for generating music
 # usage
 See example folder
 
+# samples
+
+Routing transformer trained on pop909: https://soundcloud.com/user-419192262-663004693/sets/routing-transformer-pop909
+Transformer trained on Lakh midi dataset: https://soundcloud.com/user-419192262-663004693/sets/generated-by-music-transformer-from-scratch
+
 # thanks to 
 
 Great transformers implementations from lucidrains
@@ -16,6 +21,9 @@ Pop music transformer and REMI format
 
 Pop909 dataset
 * https://github.com/music-x-lab/POP909-Dataset
+
+Lakh midi dataset
+* https://colinraffel.com/projects/lmd/
 
 # Issues
 
