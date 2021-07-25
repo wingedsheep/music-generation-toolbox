@@ -155,7 +155,6 @@ class LinearAttentionTransformerModel(object):
             dropout=checkpoint['dropout'],
             dim=checkpoint['dim'],
             depth=checkpoint['depth'],
-            window_size=checkpoint['window_size'],
             heads=checkpoint['heads']
         )
 
