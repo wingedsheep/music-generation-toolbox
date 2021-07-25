@@ -38,13 +38,12 @@ class LinearAttentionTransformerModel(object):
 
     def __init__(self,
                  dictionary: Dictionary,
-                 max_sequence_length=4096,
+                 max_sequence_length=2048,
                  learning_rate=1e-4,
                  dropout=0.1,
                  dim=512,
                  depth=6,
-                 heads=4,
-                 window_size=256
+                 heads=4
                  ):
         self.dictionary = dictionary
         self.learning_rate = learning_rate
@@ -53,7 +52,6 @@ class LinearAttentionTransformerModel(object):
         self.dim = dim
         self.depth = depth
         self.heads = heads
-        self.window_size = window_size
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
