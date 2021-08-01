@@ -170,6 +170,8 @@ class CompoundWordMapper(object):
             return self.map_compound_note_to_remi(compound_word, current_position), current_position
         elif word_type == 3:
             return self.map_compound_timing_to_remi(compound_word)
+        else:
+            return [], current_position
 
     def map_compound_note_to_remi(self, compound_word, current_position):
         position = current_position + self.position_offset
