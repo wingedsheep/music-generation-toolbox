@@ -229,6 +229,9 @@ class CompoundTransformerWrapper(nn.Module):
         x = self.emb_dropout(x)
         x = self.project_emb(x)
 
+        if self.training:
+            x.squeeze(0)
+
         x, intermediates = self.attn_layers(x, mask=mask, return_hiddens=True, **kwargs)
         x = self.norm(x)
 
