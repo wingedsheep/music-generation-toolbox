@@ -17,6 +17,7 @@ class CompoundWordDataManager(DataManager):
         self.transposition_steps = transposition_steps
         self.map_tracks_to_instruments = map_tracks_to_instruments
         self.dictionary = DictionaryGenerator.create_dictionary()
+        self.compound_word_mapper = CompoundWordMapper(self.dictionary)
 
     def prepare_data(self, midi_paths) -> DataSet:
         training_data = []
@@ -28,8 +29,8 @@ class CompoundWordDataManager(DataManager):
                                               map_tracks_to_instruments=self.map_tracks_to_instruments,
                                               use_chords=False)
 
-                    compound_words = CompoundWordMapper.map_to_compound(data, self.dictionary)
-                    compound_data = CompoundWordMapper.map_compound_words_to_data(compound_words)
+                    compound_words = self.compound_word_mapper.map_to_compound(data, self.dictionary)
+                    compound_data = self.compound_word_mapper.map_compound_words_to_data(compound_words)
 
                     training_data.append(compound_data)
                 except Exception as e:
@@ -38,5 +39,5 @@ class CompoundWordDataManager(DataManager):
         return DataSet(training_data, self.dictionary)
 
     def to_midi(self, data) -> MidiWrapper:
-        remi = CompoundWordMapper.map_to_remi(data, self.dictionary)
+        remi = self.compound_word_mapper.map_to_remi(data)
         return MidiToolkitWrapper(util.to_midi(remi, self.dictionary))
