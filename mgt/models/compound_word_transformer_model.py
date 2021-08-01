@@ -138,6 +138,47 @@ class CompoundTransformerWrapper(nn.Module):
         nn.init.normal_(self.word_emb_duration.weight(), std=0.02)
         nn.init.normal_(self.word_emb_velocity.weight(), std=0.02)
 
+    def forward_output_sampling(self, h, y_type):
+        # sample type
+        y_type_logit = y_type[0, :]
+        cur_word_type = sampling(y_type_logit, p=0.90)
+
+        type_word_t = torch.from_numpy(np.array([cur_word_type])).long().to(get_device()).unsqueeze(0)
+
+        tf_skip_type = self.word_emb_type(type_word_t)
+
+        # concat
+        y_concat_type = torch.cat([h, tf_skip_type], dim=-1)
+        y_ = self.project_concat_type(y_concat_type)
+
+        # project other
+        proj_barbeat = self.proj_barbeat(y_)
+        proj_tempo = self.proj_tempo(y_)
+        proj_instrument = self.proj_instrument(y_)
+        proj_pitch = self.proj_pitch(y_)
+        proj_duration = self.proj_duration(y_)
+        proj_velocity = self.proj_velocity(y_)
+
+        # sampling gen_cond
+        cur_word_barbeat = sampling(proj_barbeat, t=1.2)
+        cur_word_tempo = sampling(proj_tempo, t=1.2, p=0.9)
+        cur_word_instrument = sampling(proj_instrument, t=1.2, p=0.9)
+        cur_word_pitch = sampling(proj_pitch, p=0.9)
+        cur_word_duration = sampling(proj_duration, t=2, p=0.9)
+        cur_word_velocity = sampling(proj_velocity, t=5)
+
+        # collect
+        next_arr = np.array([
+            cur_word_type,
+            cur_word_barbeat,
+            cur_word_tempo,
+            cur_word_instrument,
+            cur_word_pitch,
+            cur_word_duration,
+            cur_word_velocity
+        ])
+        return next_arr
+
     def forward_output(self,
                        h,
                        target
@@ -147,14 +188,14 @@ class CompoundTransformerWrapper(nn.Module):
         y_concat_type = torch.cat([h, tf_skip_type], dim=-1)
         y_ = self.project_concat_type(y_concat_type)
 
-        emb_barbeat = self.proj_barbeat(y_)
-        emb_tempo = self.proj_tempo(y_)
-        emb_instrument = self.proj_instrument(y_)
-        emb_pitch = self.proj_pitch(y_)
-        emb_duration = self.proj_duration(y_)
-        emb_velocity = self.proj_velocity(y_)
+        proj_barbeat = self.proj_barbeat(y_)
+        proj_tempo = self.proj_tempo(y_)
+        proj_instrument = self.proj_instrument(y_)
+        proj_pitch = self.proj_pitch(y_)
+        proj_duration = self.proj_duration(y_)
+        proj_velocity = self.proj_velocity(y_)
 
-        return emb_barbeat, emb_tempo, emb_instrument, emb_pitch, emb_duration, emb_velocity
+        return proj_barbeat, proj_tempo, proj_instrument, proj_pitch, proj_duration, proj_velocity
 
     def forward_hidden(
             self,
@@ -224,6 +265,52 @@ ENTMAX_ALPHA = 1.3
 entmax = entmax_bisect
 
 
+################################################################################
+# Sampling
+################################################################################
+# -- temperature -- #
+def softmax_with_temperature(logits, temperature):
+    probs = np.exp(logits / temperature) / np.sum(np.exp(logits / temperature))
+    return probs
+
+
+def weighted_sampling(probs):
+    probs /= sum(probs)
+    sorted_probs = np.sort(probs)[::-1]
+    sorted_index = np.argsort(probs)[::-1]
+    word = np.random.choice(sorted_index, size=1, p=sorted_probs)[0]
+    return word
+
+
+# -- nucleus -- #
+def nucleus(probs, p):
+    probs /= (sum(probs) + 1e-5)
+    sorted_probs = np.sort(probs)[::-1]
+    sorted_index = np.argsort(probs)[::-1]
+    cusum_sorted_probs = np.cumsum(sorted_probs)
+    after_threshold = cusum_sorted_probs > p
+    if sum(after_threshold) > 0:
+        last_index = np.where(after_threshold)[0][0] + 1
+        candi_index = sorted_index[:last_index]
+    else:
+        candi_index = sorted_index[:]
+    candi_probs = [probs[i] for i in candi_index]
+    candi_probs /= sum(candi_probs)
+    word = np.random.choice(candi_index, size=1, p=candi_probs)[0]
+    return word
+
+
+def sampling(logit, p=None, t=1.0):
+    logit = logit.squeeze().cpu().numpy()
+    probs = softmax_with_temperature(logits=logit, temperature=t)
+
+    if p is not None:
+        cur_word = nucleus(probs, p=p)
+    else:
+        cur_word = weighted_sampling(probs)
+    return cur_word
+
+
 class CompoundWordAutoregressiveWrapper(nn.Module):
     def __init__(self, net: CompoundTransformerWrapper, ignore_index=-100, pad_value=None):
         super().__init__()
@@ -245,7 +332,7 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
         final_res = []
         h = None
 
-        init_t = torch.from_numpy(prompt).long().cuda()
+        init_t = torch.from_numpy(prompt).long().to(get_device())
         for step in range(prompt.shape[0]):
             input_ = init_t[step, :].unsqueeze(0).unsqueeze(0)
             final_res.append(prompt[step, :][None, ...])
@@ -254,13 +341,13 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
         print('------ generate ------')
         for _ in range(output_length):
             # sample others
-            next_arr = self.froward_output_sampling(h, y_type)
+            next_arr = self.net.forward_output_sampling(h, y_type)
             final_res.append(next_arr[None, ...])
 
             # forward
-            input_ = torch.from_numpy(next_arr).long().cuda()
+            input_ = torch.from_numpy(next_arr).long().to(get_device())
             input_ = input_.unsqueeze(0).unsqueeze(0)
-            h, y_type, memory = self.forward_hidden(input_)
+            h, y_type = self.net.forward_hidden(input_)
 
         return final_res
 
@@ -361,6 +448,7 @@ class CompoundWordTransformerModel(object):
         print(f"Generating a new song with {output_length} characters.")
         self.model.eval()
         sample = self.model.generate(output_length=output_length, prompt=prompt)
+        print(sample)
         return sample.cpu().detach().numpy()[0]
 
     def create_model(self):
