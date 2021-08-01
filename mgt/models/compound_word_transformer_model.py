@@ -357,15 +357,10 @@ class CompoundWordTransformerModel(object):
             running_time = (time.time() - start_time)
             print(f"Loss after epoch {epoch + 1} is {epoch_loss}. Running time: {running_time}")
 
-    def generate(self, output_length=100, temperature=1., filter_treshold=0.9, prompt=None):
+    def generate(self, output_length=100, prompt=None):
         print(f"Generating a new song with {output_length} characters.")
-        if prompt is None:
-            prompt = [0]
-
         self.model.eval()
-        initial = torch.tensor([prompt]).long().to(get_device())  # assume 0 is start token
-
-        sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_treshold)
+        sample = self.model.generate(output_length=output_length, prompt=prompt)
         return sample.cpu().detach().numpy()[0]
 
     def create_model(self):
