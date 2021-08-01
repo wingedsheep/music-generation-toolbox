@@ -448,12 +448,12 @@ class CompoundWordTransformerModel(object):
         print(f"Generating a new song with {output_length} characters.")
 
         if prompt is None:
-            prompt = np.array([[2, 0, 0, 0, 0, 0, 0]])  # Bar
+            prompt = np.array([[3, 0, 0, 0, 0, 0, 0]])  # Bar
 
         self.model.eval()
         sample = self.model.generate(output_length=output_length, prompt=prompt)
         result = []
-        result.extend(prompt)
+        result.extend(prompt.tolist()[0])
         result.extend(list(map(lambda x: x.tolist()[0], sample)))
         return result
 
