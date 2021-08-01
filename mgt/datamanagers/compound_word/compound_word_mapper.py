@@ -71,15 +71,34 @@ def map_word(key, offset):
 
 class CompoundWordMapper(object):
 
-    @staticmethod
-    def map_to_compound(remi_words: [string], dictionary: Dictionary) -> [CompoundWord]:
-        instrument_offset = min({k: v for k, v in dictionary.dtw.items() if 'Instrument' in v}.keys())
-        tempo_offset = min({k: v for k, v in dictionary.dtw.items() if 'Tempo' in v}.keys())
-        note_duration_offset = min({k: v for k, v in dictionary.dtw.items() if 'Note Duration' in v}.keys())
-        note_velocity_offset = min({k: v for k, v in dictionary.dtw.items() if 'Note Velocity' in v}.keys())
-        position_offset = min({k: v for k, v in dictionary.dtw.items() if 'Position' in v}.keys())
-        pitch_offset = min({k: v for k, v in dictionary.dtw.items() if 'Note On' in v}.keys())
+    def __init__(self, dictionary):
+        self.dictionary = dictionary
 
+        instrument_keys = {k: v for k, v in dictionary.dtw.items() if 'Instrument' in v}.keys()
+        self.instrument_size = len(instrument_keys)
+        self.instrument_offset = min(instrument_keys)
+
+        tempo_keys = {k: v for k, v in dictionary.dtw.items() if 'Tempo' in v}.keys()
+        self.tempo_size = len(tempo_keys)
+        self.tempo_offset = min(tempo_keys)
+
+        note_duration_keys = {k: v for k, v in dictionary.dtw.items() if 'Note Duration' in v}.keys()
+        self.note_duration_size = len(note_duration_keys)
+        self.note_duration_offset = min(note_duration_keys)
+
+        note_velocity_keys = {k: v for k, v in dictionary.dtw.items() if 'Note Velocity' in v}.keys()
+        self.note_velocity_size = len(note_velocity_keys)
+        self.note_velocity_offset = min(note_velocity_keys)
+
+        position_keys = {k: v for k, v in dictionary.dtw.items() if 'Position' in v}.keys()
+        self.position_size = len(position_keys)
+        self.position_offset = min(position_keys)
+
+        pitch_keys = {k: v for k, v in dictionary.dtw.items() if 'Note On' in v}.keys()
+        self.pitch_size = len(pitch_keys)
+        self.pitch_offset = min(pitch_keys)
+
+    def map_to_compound(self, remi_words: [string], dictionary: Dictionary) -> [CompoundWord]:
         compound_words = []
         prev_position = None
         current_tempo = None
@@ -94,15 +113,15 @@ class CompoundWordMapper(object):
                     'Note On' in remi_words[i + 3] and \
                     'Note Duration' in remi_words[i + 4]:
 
-                current_position = map_word(dictionary.wtd[remi_words[i]], position_offset)
+                current_position = map_word(dictionary.wtd[remi_words[i]], self.position_offset)
                 if prev_position is None or prev_position != current_position:
                     compound_words.append(create_beat_event(current_position, current_tempo))
                     prev_position = current_position
 
-                instrument_position = map_word(dictionary.wtd[remi_words[i + 1]], instrument_offset)
-                velocity_position = map_word(dictionary.wtd[remi_words[i + 2]], note_velocity_offset)
-                pitch_position = map_word(dictionary.wtd[remi_words[i + 3]], pitch_offset)
-                duration_position = map_word(dictionary.wtd[remi_words[i + 4]], note_duration_offset)
+                instrument_position = map_word(dictionary.wtd[remi_words[i + 1]], self.instrument_offset)
+                velocity_position = map_word(dictionary.wtd[remi_words[i + 2]], self.note_velocity_offset)
+                pitch_position = map_word(dictionary.wtd[remi_words[i + 3]], self.pitch_offset)
+                duration_position = map_word(dictionary.wtd[remi_words[i + 4]], self.note_duration_offset)
                 compound_words.append(create_note_event(
                     instrument=instrument_position,
                     velocity=velocity_position,
@@ -113,10 +132,10 @@ class CompoundWordMapper(object):
                     'Tempo Class' in remi_words[i + 1] and \
                     'Tempo Value' in remi_words[i + 2]:
 
-                tempo_class = map_word(dictionary.wtd[remi_words[i + 1]], tempo_offset)
-                tempo_value = map_word(dictionary.wtd[remi_words[i + 2]], tempo_offset)
+                tempo_class = map_word(dictionary.wtd[remi_words[i + 1]], self.tempo_offset)
+                tempo_value = map_word(dictionary.wtd[remi_words[i + 2]], self.tempo_offset)
                 current_tempo = tempo_class * NUMBER_OF_TEMPO_VALUES + tempo_value
-                current_position = map_word(dictionary.wtd[remi_words[i]], position_offset)
+                current_position = map_word(dictionary.wtd[remi_words[i]], self.position_offset)
                 if prev_position is None or prev_position != current_position:
                     compound_words.append(create_beat_event(current_position, current_tempo))
                     prev_position = current_position
@@ -137,6 +156,36 @@ class CompoundWordMapper(object):
             x.velocity
         ], compound_words))
 
-    @staticmethod
-    def map_to_remi(compound_data: [[int]], dictionary: Dictionary):
-        pass
+    def map_to_remi(self, compound_data: [[int]]):
+        result = []
+        current_position = 0
+        for compound_word in compound_data:
+            remi_sequence, current_position = self.map_compound_word_to_remi(compound_word, current_position)
+            result.extend(remi_sequence)
+        return result
+
+    def map_compound_word_to_remi(self, compound_word, current_position):
+        word_type = compound_word[0]
+        if word_type == 2:
+            return self.map_compound_note_to_remi(compound_word, current_position), current_position
+        elif word_type == 3:
+            return self.map_compound_timing_to_remi(compound_word)
+
+    def map_compound_note_to_remi(self, compound_word, current_position):
+        position = current_position + self.position_offset
+        instrument = compound_word[3] + self.instrument_offset
+        pitch = compound_word[4] + self.pitch_offset
+        duration = compound_word[5] + self.note_duration_offset
+        velocity = compound_word[6] + self.note_velocity_offset
+        return [position, instrument, pitch, duration, velocity]
+
+    def map_compound_timing_to_remi(self, compound_word):
+        bar_beat = compound_word[1]
+        if bar_beat == 0:
+            return [self.dictionary.word_to_data('Bar_None')], 0
+        else:
+            tempo = compound_word[2]
+            tempo_class = int(tempo / NUMBER_OF_TEMPO_VALUES) + self.tempo_offset
+            tempo_value = tempo % NUMBER_OF_TEMPO_VALUES + 3 + self.tempo_offset
+            position = bar_beat - 1 + self.position_offset
+            return [position, tempo_class, tempo_value], bar_beat - 1
