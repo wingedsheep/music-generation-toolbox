@@ -325,11 +325,8 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
         self.max_seq_len = net.max_seq_len
 
     @torch.no_grad()
-    def generate(self, prompt=None, output_length=100):
+    def generate(self, prompt, output_length=100):
         self.net.eval()
-
-        if prompt is None:
-            prompt = np.array([[2, 0, 0, 0, 0, 0, 0]])  # Bar
 
         print('------ initiate ------')
         final_res = []
@@ -449,6 +446,10 @@ class CompoundWordTransformerModel(object):
 
     def generate(self, output_length=100, prompt=None):
         print(f"Generating a new song with {output_length} characters.")
+
+        if prompt is None:
+            prompt = np.array([[2, 0, 0, 0, 0, 0, 0]])  # Bar
+
         self.model.eval()
         sample = self.model.generate(output_length=output_length, prompt=prompt)
         result = []
