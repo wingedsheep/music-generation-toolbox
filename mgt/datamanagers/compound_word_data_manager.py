@@ -38,4 +38,5 @@ class CompoundWordDataManager(DataManager):
         return DataSet(training_data, self.dictionary)
 
     def to_midi(self, data) -> MidiWrapper:
-        return MidiToolkitWrapper(util.to_midi(data, self.dictionary))
+        remi = CompoundWordMapper.map_to_remi(data, self.dictionary)
+        return MidiToolkitWrapper(util.to_midi(remi, self.dictionary))

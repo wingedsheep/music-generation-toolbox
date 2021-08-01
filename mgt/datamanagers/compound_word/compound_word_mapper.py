@@ -138,5 +138,5 @@ class CompoundWordMapper(object):
         ], compound_words))
 
     @staticmethod
-    def map_to_remi(compound_data: [int]):
+    def map_to_remi(compound_data: [[int]], dictionary: Dictionary):
         pass

@@ -26,4 +26,5 @@ model = CompoundWordTransformerModel(
 )
 model.train(x_train.data, epochs=1)
 result = model.generate(output_length=10)
-print(result)
+midi = data_manager.to_midi(result)
+midi.save('test.midi')
