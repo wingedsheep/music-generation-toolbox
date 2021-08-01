@@ -179,7 +179,7 @@ class CompoundWordMapper(object):
         pitch = compound_word[4] + self.pitch_offset
         duration = compound_word[5] + self.note_duration_offset
         velocity = compound_word[6] + self.note_velocity_offset
-        return [position, instrument, pitch, duration, velocity]
+        return [position, instrument, velocity, pitch, duration]
 
     def map_compound_timing_to_remi(self, compound_word):
         bar_beat = compound_word[1]
