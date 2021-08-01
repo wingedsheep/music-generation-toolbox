@@ -22,6 +22,6 @@ model = CompoundWordTransformerModel(
         64,   # Duration
         32    # Velocity
     ],
-    max_sequence_length=2
+    max_sequence_length=256
 )
 model.train(x_train.data, epochs=1)

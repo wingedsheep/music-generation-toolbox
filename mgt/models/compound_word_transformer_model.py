@@ -20,7 +20,7 @@ from entmax import entmax_bisect
 
 def pad(array: list, max_sequence_length, padding_character=None):
     if padding_character is None:
-        padding_character = [0, 0, 0, 0, 0, 0, 0, 0]
+        padding_character = [0, 0, 0, 0, 0, 0, 0]
     padded_array = array.copy()
     for _ in range(max_sequence_length):
         padded_array.insert(0, padding_character)
@@ -228,10 +228,9 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
     def __init__(self, net, ignore_index=-100, pad_value=None):
         super().__init__()
         if pad_value is None:
-            pad_value = [0, 0, 0, 0, 0, 0, 0, 0]
+            pad_value = [0, 0, 0, 0, 0, 0, 0]
         self.pad_value = pad_value
         self.ignore_index = ignore_index
-
         self.net = net
         self.max_seq_len = net.max_seq_len
 
@@ -284,8 +283,6 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
         return out
 
     def calculate_loss(self, predicted, target, loss_mask):
-        if loss_mask is None:
-            loss_mask = torch.ones_like(predicted).bool().to(get_device())
         loss = F.cross_entropy(predicted[:, ...].permute(0, 2, 1), target)
         loss = loss * loss_mask
         loss = torch.sum(loss) / torch.sum(loss_mask)
@@ -295,12 +292,8 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
         xi = x[:, :-1]
         xo = x[:, 1:]
 
-        # help auto-solve a frequent area of confusion around input masks in auto-regressive
-        # if user supplies a mask that is only off by one from the source sequence, resolve it for them
-        mask = kwargs.get('mask', None)
-        if mask is not None and mask.shape[1] == x.shape[1]:
-            mask = mask[:, :-1]
-            kwargs['mask'] = mask
+        mask = torch.ones_like(x).bool().to(get_device())
+        mask = mask[:, :-1, :]
 
         h, proj_type = self.net.forward_hidden(xi, **kwargs)
         proj_barbeat, proj_tempo, proj_instrument, proj_pitch, proj_duration, proj_velocity = self.net.forward_output(h, xo)
@@ -405,10 +398,7 @@ class CompoundWordTransformerModel(object):
                 ff_dropout=self.dropout,  # feedforward dropout
                 rotary_pos_emb=True
             )
-        ),
-            ignore_index=0,
-            pad_value=0
-        ).to(get_device())
+        )).to(get_device())
 
         return model
 
