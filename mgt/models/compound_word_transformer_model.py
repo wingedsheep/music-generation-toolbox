@@ -451,7 +451,10 @@ class CompoundWordTransformerModel(object):
         print(f"Generating a new song with {output_length} characters.")
         self.model.eval()
         sample = self.model.generate(output_length=output_length, prompt=prompt)
-        return list(map(lambda x: x.tolist()[0], sample))
+        result = []
+        result.extend(prompt)
+        result.extend(list(map(lambda x: x.tolist()[0], sample)))
+        return result
 
     def create_model(self):
         model = CompoundWordAutoregressiveWrapper(CompoundTransformerWrapper(
