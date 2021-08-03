@@ -355,8 +355,8 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
         return final_res
 
     def calculate_loss(self, predicted, target, loss_mask):
-        print(f"Target {target.shape}")
-        print(f"Loss mask {loss_mask.shape}")
+        # print(f"Target {target.shape}")
+        # print(f"Loss mask {loss_mask.shape}")
         loss = F.cross_entropy(predicted[:, ...].permute(0, 2, 1), target)
         loss = loss * loss_mask
         loss = torch.sum(loss) / torch.sum(loss_mask)
