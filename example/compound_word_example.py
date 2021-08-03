@@ -22,7 +22,7 @@ model = CompoundWordTransformerModel(
         64,   # Duration
         32    # Velocity
     ],
-    max_sequence_length=3
+    max_sequence_length=100
 )
 model.train(x_train.data, epochs=1)
 result = model.generate(output_length=10)

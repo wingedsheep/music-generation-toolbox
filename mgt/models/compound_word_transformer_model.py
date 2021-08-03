@@ -17,10 +17,13 @@ from torch import nn
 import torch.nn.functional as F
 from entmax import entmax_bisect
 
+COMPOUND_WORD_PADDING = [0, 0, 0, 0, 0, 0, 0]
+COMPOUND_WORD_BAR = [3, 0, 0, 0, 0, 0, 0]
+
 
 def pad(array: list, max_sequence_length, padding_character=None):
     if padding_character is None:
-        padding_character = [0, 0, 0, 0, 0, 0, 0]
+        padding_character = COMPOUND_WORD_PADDING
     padded_array = array.copy()
     for _ in range(max_sequence_length):
         padded_array.insert(0, padding_character)
@@ -318,7 +321,7 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
     def __init__(self, net: CompoundTransformerWrapper, ignore_index=-100, pad_value=None):
         super().__init__()
         if pad_value is None:
-            pad_value = [0, 0, 0, 0, 0, 0, 0]
+            pad_value = COMPOUND_WORD_PADDING
         self.pad_value = pad_value
         self.ignore_index = ignore_index
         self.net = net
@@ -352,6 +355,8 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
         return final_res
 
     def calculate_loss(self, predicted, target, loss_mask):
+        print(f"Target {target.shape}")
+        print(f"Loss mask {loss_mask.shape}")
         loss = F.cross_entropy(predicted[:, ...].permute(0, 2, 1), target)
         loss = loss * loss_mask
         loss = torch.sum(loss) / torch.sum(loss_mask)
@@ -361,12 +366,12 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
         xi = x[:, :-1]
         xo = x[:, 1:]
 
-        mask = torch.ones_like(x).bool().to(get_device())
-        mask = mask[:, :-1, :]
+        mask = (xo[..., 0] != 0)
 
         h, proj_type = self.net.forward_hidden(xi, **kwargs)
         proj_barbeat, proj_tempo, proj_instrument, proj_pitch, proj_duration, proj_velocity = self.net.forward_output(h, xo)
 
+        # Filter padding indices
         type_loss = self.calculate_loss(proj_type, xo[..., 0], mask)
         barbeat_loss = self.calculate_loss(proj_barbeat, xo[..., 1], mask)
         tempo_loss = self.calculate_loss(proj_tempo, xo[..., 2], mask)
@@ -448,7 +453,7 @@ class CompoundWordTransformerModel(object):
         print(f"Generating a new song with {output_length} characters.")
 
         if prompt is None:
-            prompt = np.array([[3, 0, 0, 0, 0, 0, 0]])  # Bar
+            prompt = np.array([COMPOUND_WORD_BAR])  # Bar
 
         self.model.eval()
         sample = self.model.generate(output_length=output_length, prompt=prompt)
