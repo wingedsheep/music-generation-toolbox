@@ -232,7 +232,7 @@ class CompoundTransformerWrapper(nn.Module):
         x = self.emb_dropout(x)
         x = self.project_emb(x)
 
-        if self.training:
+        if not self.training:
             x.squeeze(0)
 
         x, intermediates = self.attn_layers(x, mask=mask, return_hiddens=True, **kwargs)
@@ -350,6 +350,9 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
             # forward
             input_ = torch.from_numpy(next_arr).long().to(get_device())
             input_ = input_.unsqueeze(0).unsqueeze(0)
+
+            print(input_)
+
             h, y_type = self.net.forward_hidden(input_)
 
         return final_res
