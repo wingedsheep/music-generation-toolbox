@@ -25,8 +25,10 @@ def pad(array: list, max_sequence_length, padding_character=None):
     if padding_character is None:
         padding_character = COMPOUND_WORD_PADDING
     padded_array = array.copy()
-    for _ in range(max_sequence_length):
+
+    while len(padded_array) < max_sequence_length:
         padded_array.insert(0, padding_character)
+
     return padded_array
 
 
@@ -39,7 +41,7 @@ def get_batch(training_data, batch_size, max_sequence_length):
 
     sequences = []
     for selection in indices:
-        padded_song = pad(training_data[selection[0]], max_sequence_length)
+        padded_song = pad(training_data[selection[0]], max_sequence_length + len(training_data[selection[0]]))
         sequences.append(padded_song[selection[1]: selection[1] + max_sequence_length + 1])
 
     return sequences
@@ -307,7 +309,7 @@ def nucleus(probs, p):
 
 
 def sampling(logit, p=None, t=1.0):
-    logit = logit.squeeze().cpu().numpy()
+    logit = logit.squeeze().cpu().detach().numpy()
     probs = softmax_with_temperature(logits=logit, temperature=t)
 
     if p is not None:
@@ -332,34 +334,26 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
         self.net.eval()
 
         print('------ initiate ------')
-        final_res = []
-        h = None
-
-        init_t = torch.from_numpy(prompt).long().to(get_device())
-        for step in range(prompt.shape[0]):
-            input_ = init_t[step, :].unsqueeze(0).unsqueeze(0)
-            final_res.append(prompt[step, :][None, ...])
-            h, y_type = self.net.forward_hidden(input_)
+        final_res = prompt.copy()
+        padded = pad(final_res[-self.max_seq_len:], self.max_seq_len)
+        input_ = torch.tensor([padded]).long().to(get_device())
+        h, y_type = self.net.forward_hidden(input_)
 
         print('------ generate ------')
         for _ in range(output_length):
             # sample others
-            next_arr = self.net.forward_output_sampling(h, y_type)
-            final_res.append(next_arr[None, ...])
+            next_arr = self.net.forward_output_sampling(h[:, -1:, :], y_type[:, -1:, :])
+            final_res.append(next_arr.tolist())
 
             # forward
-            input_ = torch.from_numpy(next_arr).long().to(get_device())
-            input_ = input_.unsqueeze(0).unsqueeze(0)
-
-            print(input_)
+            padded = pad(final_res[-self.max_seq_len:], self.max_seq_len)
+            input_ = torch.tensor([padded]).long().to(get_device())
 
             h, y_type = self.net.forward_hidden(input_)
 
         return final_res
 
     def calculate_loss(self, predicted, target, loss_mask):
-        # print(f"Target {target.shape}")
-        # print(f"Loss mask {loss_mask.shape}")
         loss = F.cross_entropy(predicted[:, ...].permute(0, 2, 1), target)
         loss = loss * loss_mask
         loss = torch.sum(loss) / torch.sum(loss_mask)
@@ -456,11 +450,11 @@ class CompoundWordTransformerModel(object):
         print(f"Generating a new song with {output_length} characters.")
 
         if prompt is None:
-            prompt = np.array([COMPOUND_WORD_BAR])  # Bar
+            prompt = [COMPOUND_WORD_BAR]  # Bar
 
         self.model.eval()
         sample = self.model.generate(output_length=output_length, prompt=prompt)
-        return list(map(lambda x: x.tolist()[0], sample))
+        return sample
 
     def create_model(self):
         model = CompoundWordAutoregressiveWrapper(CompoundTransformerWrapper(
