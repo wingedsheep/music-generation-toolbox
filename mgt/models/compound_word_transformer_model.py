@@ -336,7 +336,7 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
         print('------ initiate ------')
         final_res = prompt.copy()
         padded = pad(final_res[-self.max_seq_len:], self.max_seq_len)
-        input_ = torch.tensor([padded]).long().to(get_device())
+        input_ = torch.tensor([final_res]).long().to(get_device())
         h, y_type = self.net.forward_hidden(input_)
 
         print('------ generate ------')
@@ -347,35 +347,35 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
 
             # forward
             padded = pad(final_res[-self.max_seq_len:], self.max_seq_len)
-            input_ = torch.tensor([padded]).long().to(get_device())
+            input_ = torch.tensor([final_res[-self.max_seq_len:]]).long().to(get_device())
 
             h, y_type = self.net.forward_hidden(input_)
 
         return final_res
 
     def calculate_loss(self, predicted, target, loss_mask):
-        loss = F.cross_entropy(predicted[:, ...].permute(0, 2, 1), target)
+        loss = F.cross_entropy(predicted[:, ...].permute(0, 2, 1), target, reduction='none')
         loss = loss * loss_mask
         loss = torch.sum(loss) / torch.sum(loss_mask)
         return loss
 
     def train_step(self, x, **kwargs):
         xi = x[:, :-1]
-        xo = x[:, 1:]
+        target = x[:, 1:]
 
-        mask = (xo[..., 0] != 0)
+        mask = (target[..., 0] != 0)
 
         h, proj_type = self.net.forward_hidden(xi, **kwargs)
-        proj_barbeat, proj_tempo, proj_instrument, proj_pitch, proj_duration, proj_velocity = self.net.forward_output(h, xo)
+        proj_barbeat, proj_tempo, proj_instrument, proj_pitch, proj_duration, proj_velocity = self.net.forward_output(h, target)
 
         # Filter padding indices
-        type_loss = self.calculate_loss(proj_type, xo[..., 0], mask)
-        barbeat_loss = self.calculate_loss(proj_barbeat, xo[..., 1], mask)
-        tempo_loss = self.calculate_loss(proj_tempo, xo[..., 2], mask)
-        instrument_loss = self.calculate_loss(proj_instrument, xo[..., 3], mask)
-        pitch_loss = self.calculate_loss(proj_pitch, xo[..., 4], mask)
-        duration_loss = self.calculate_loss(proj_duration, xo[..., 5], mask)
-        velocity_loss = self.calculate_loss(proj_velocity, xo[..., 6], mask)
+        type_loss = self.calculate_loss(proj_type, target[..., 0], mask)
+        barbeat_loss = self.calculate_loss(proj_barbeat, target[..., 1], mask)
+        tempo_loss = self.calculate_loss(proj_tempo, target[..., 2], mask)
+        instrument_loss = self.calculate_loss(proj_instrument, target[..., 3], mask)
+        pitch_loss = self.calculate_loss(proj_pitch, target[..., 4], mask)
+        duration_loss = self.calculate_loss(proj_duration, target[..., 5], mask)
+        velocity_loss = self.calculate_loss(proj_velocity, target[..., 6], mask)
 
         return type_loss, barbeat_loss, tempo_loss, instrument_loss, pitch_loss, duration_loss, velocity_loss
 
