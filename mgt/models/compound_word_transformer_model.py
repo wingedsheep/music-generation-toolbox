@@ -336,7 +336,7 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
         print('------ initiate ------')
         final_res = prompt.copy()
         padded = pad(final_res[-self.max_seq_len:], self.max_seq_len)
-        input_ = torch.tensor([final_res]).long().to(get_device())
+        input_ = torch.tensor([padded]).long().to(get_device())
         h, y_type = self.net.forward_hidden(input_)
 
         print('------ generate ------')
@@ -347,7 +347,7 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
 
             # forward
             padded = pad(final_res[-self.max_seq_len:], self.max_seq_len)
-            input_ = torch.tensor([final_res[-self.max_seq_len:]]).long().to(get_device())
+            input_ = torch.tensor([padded]).long().to(get_device())
 
             h, y_type = self.net.forward_hidden(input_)
 
