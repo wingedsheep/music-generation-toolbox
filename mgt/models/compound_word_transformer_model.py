@@ -165,12 +165,12 @@ class CompoundTransformerWrapper(nn.Module):
         proj_velocity = self.proj_velocity(y_)
 
         # sampling gen_cond
-        cur_word_barbeat = sampling(proj_barbeat, t=1.2)
-        cur_word_tempo = sampling(proj_tempo, t=1.2, p=0.9)
-        cur_word_instrument = sampling(proj_instrument, t=1.2, p=0.9)
+        cur_word_barbeat = sampling(proj_barbeat)
+        cur_word_tempo = sampling(proj_tempo, p=0.9)
+        cur_word_instrument = sampling(proj_instrument, p=0.9)
         cur_word_pitch = sampling(proj_pitch, p=0.9)
-        cur_word_duration = sampling(proj_duration, t=2, p=0.9)
-        cur_word_velocity = sampling(proj_velocity, t=5)
+        cur_word_duration = sampling(proj_duration)
+        cur_word_velocity = sampling(proj_velocity)
 
         # collect
         next_arr = np.array([
