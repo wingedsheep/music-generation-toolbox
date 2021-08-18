@@ -18,7 +18,7 @@ import torch.nn.functional as F
 from entmax import entmax_bisect
 
 COMPOUND_WORD_PADDING = [0, 0, 0, 0, 0, 0, 0]
-COMPOUND_WORD_BAR = [3, 0, 0, 0, 0, 0, 0]
+COMPOUND_WORD_BAR = [2, 0, 0, 0, 0, 0, 0]
 
 
 def pad(array: list, max_sequence_length, padding_character=None):
@@ -319,6 +319,13 @@ def sampling(logit, p=None, t=1.0):
     return cur_word
 
 
+def truncate_sequence(inputs, mask=None, pad_value=COMPOUND_WORD_PADDING):
+    ba, t, device, dtype = *inputs.shape, inputs.device, inputs.dtype
+    mask = default(mask, torch.ones_like(inputs).bool())
+    rand_length = random.randint(2, t)
+    return inputs[:, :rand_length], mask[:, :rand_length]
+
+
 class CompoundWordAutoregressiveWrapper(nn.Module):
     def __init__(self, net: CompoundTransformerWrapper, ignore_index=-100, pad_value=None):
         super().__init__()
@@ -359,11 +366,14 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
         loss = torch.sum(loss) / torch.sum(loss_mask)
         return loss
 
-    def train_step(self, x, **kwargs):
+    def train_step(self, x, randomly_truncate_sequence=False, **kwargs):
         xi = x[:, :-1]
         target = x[:, 1:]
 
         mask = (target[..., 0] != 0)
+
+        if randomly_truncate_sequence:
+            x, m = truncate_sequence(x, m, pad_value=self.pad_value)
 
         h, proj_type = self.net.forward_hidden(xi, **kwargs)
         proj_barbeat, proj_tempo, proj_instrument, proj_pitch, proj_duration, proj_velocity = self.net.forward_output(h, target)
