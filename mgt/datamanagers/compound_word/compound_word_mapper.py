@@ -101,7 +101,7 @@ class CompoundWordMapper(object):
     def map_to_compound(self, remi_words: [string], dictionary: Dictionary) -> [CompoundWord]:
         compound_words = []
         prev_position = None
-        current_tempo = None
+        current_tempo = 2 * 32
         for i in range(len(remi_words)):
             if remi_words[i] == 'Bar_None':
                 compound_words.append(create_bar_event())
