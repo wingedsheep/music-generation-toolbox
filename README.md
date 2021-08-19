@@ -19,6 +19,9 @@ Great transformers implementations from lucidrains
 Pop music transformer and REMI format
 * https://github.com/YatingMusic/remi
 
+Compound word transformer
+* https://github.com/YatingMusic/compound-word-transformer
+
 Pop909 dataset
 * https://github.com/music-x-lab/POP909-Dataset
 
