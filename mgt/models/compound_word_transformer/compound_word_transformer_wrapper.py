@@ -77,7 +77,6 @@ class CompoundWordTransformerWrapper(nn.Module):
                 384,  # Pitch
                 128,  # Duration
                 128,  # Velocity
-
             ]
 
         self.emb_sizes = emb_sizes
