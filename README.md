@@ -6,8 +6,9 @@ See example folder
 
 # samples
 
-Routing transformer trained on pop909: https://soundcloud.com/user-419192262-663004693/sets/routing-transformer-pop909
-Transformer trained on Lakh midi dataset: https://soundcloud.com/user-419192262-663004693/sets/generated-by-music-transformer-from-scratch
+* Compound word transformer trained on pop909: https://soundcloud.com/user-419192262-663004693/sets/compound-word-transformer-pop909
+* Routing transformer trained on pop909: https://soundcloud.com/user-419192262-663004693/sets/routing-transformer-pop909
+* Transformer trained on Lakh midi dataset: https://soundcloud.com/user-419192262-663004693/sets/generated-by-music-transformer-from-scratch
 
 # thanks to 
 
