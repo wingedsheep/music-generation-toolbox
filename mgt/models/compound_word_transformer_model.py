@@ -1,23 +1,20 @@
 from __future__ import annotations
 
-from datetime import time
 import random
+import time
 
 import numpy as np
 import torch
-import time
+from x_transformers import Decoder
 
-from reformer_pytorch import ReformerLM
-from reformer_pytorch.generative_tools import TrainingWrapper
-
-from mgt.datamanagers.data_manager import Dictionary
-
-
-def pad(array, max_sequence_length, padding_character=0):
-    return list(np.repeat(padding_character, max_sequence_length)) + array
+from mgt.models.compound_word_transformer.compound_word_autoregressive_wrapper import CompoundWordAutoregressiveWrapper
+from mgt.models.compound_word_transformer.compound_word_transformer_utils import COMPOUND_WORD_BAR, pad, \
+    COMPOUND_WORD_PADDING
+from mgt.models.compound_word_transformer.compound_word_transformer_wrapper import CompoundWordTransformerWrapper
+from mgt.models.utils import get_device
 
 
-def get_batch(training_data, batch_size, max_sequence_length):
+def get_batch(training_data, batch_size, max_sequence_length, randomly_truncate=False):
     indices = []
     for i in range(batch_size):
         song_index = random.randint(0, len(training_data) - 1)
@@ -26,40 +23,55 @@ def get_batch(training_data, batch_size, max_sequence_length):
 
     sequences = []
     for selection in indices:
-        padded_song = pad(training_data[selection[0]], max_sequence_length)
+        padded_song = pad(training_data[selection[0]], max_sequence_length + len(training_data[selection[0]]))
+        if randomly_truncate:
+            rand_length = random.randint(0, max_sequence_length - 2)
+            for i in range(rand_length):
+                padded_song[i] = COMPOUND_WORD_PADDING
         sequences.append(padded_song[selection[1]: selection[1] + max_sequence_length + 1])
 
     return sequences
 
 
-def get_device():
-    return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-
-class ReformerModel(object):
+class CompoundWordTransformerModel(object):
 
     def __init__(self,
-                 dictionary: Dictionary,
-                 max_sequence_length=4096,
+                 num_tokens=None,
+                 max_sequence_length=512,
                  learning_rate=1e-4,
-                 full_attn_thres=512,
                  dropout=0.1,
-                 depth=3,
                  dim=512,
+                 depth=12,
                  heads=8
                  ):
-        self.dictionary = dictionary
-        self.max_sequence_length = max_sequence_length
+        if num_tokens is None:
+            num_tokens = [
+                4,  # Type
+                17,  # Bar / Beat
+                192,  # Tempo
+                129,  # Instrument
+                128,  # Pitch
+                64,  # Duration
+                32  # Velocity
+            ]
+        self.num_tokens = num_tokens
         self.learning_rate = learning_rate
-        self.full_attn_thres = full_attn_thres
+        self.max_sequence_length = max_sequence_length
         self.dropout = dropout
-        self.depth = depth
         self.dim = dim
+        self.depth = depth
         self.heads = heads
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
-    def train(self, x_train, epochs, batch_size=3, stop_loss=None, batches_per_epoch=100, report_per_x_batches=5):
+    def train(self,
+              x_train,
+              epochs,
+              batch_size=4,
+              stop_loss=None,
+              batches_per_epoch=100,
+              report_per_x_batches=20,
+              randomly_truncate=True):
         self.model.train()
         start_time = time.time()
         for epoch in range(epochs):
@@ -72,12 +84,13 @@ class ReformerModel(object):
                 batch = get_batch(
                     x_train,
                     batch_size=batch_size,
-                    max_sequence_length=self.max_sequence_length)
+                    max_sequence_length=self.max_sequence_length,
+                    randomly_truncate=randomly_truncate)
 
-                # when training, set return_loss equal to True
-                torch_batch = [torch.tensor(x).long().to(get_device()) for x in batch]
+                torch_batch = torch.tensor(batch).long().to(get_device())
 
-                loss = self.model(torch_batch, return_loss=True)
+                losses = self.model.train_step(torch_batch)
+                loss = (losses[0] + losses[1] + losses[2] + losses[3] + losses[4] + losses[5] + losses[6]) / 7
                 loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
@@ -92,7 +105,8 @@ class ReformerModel(object):
                 epoch_losses.append(loss_item)
 
                 if nr_of_batches_processed % report_per_x_batches == 0:
-                    print(f"Processed {nr_of_batches_processed} / {batches_per_epoch} with loss {np.mean(batch_losses)}.")
+                    print(
+                        f"Processed {nr_of_batches_processed} / {batches_per_epoch} with loss {np.mean(batch_losses)}.")
                     batch_losses = []
 
             epoch_loss = np.mean(epoch_losses)
@@ -103,35 +117,31 @@ class ReformerModel(object):
             running_time = (time.time() - start_time)
             print(f"Loss after epoch {epoch + 1} is {epoch_loss}. Running time: {running_time}")
 
-    def generate(self, output_length=100, temperature=1., filter_threshold=0.9, prompt=None):
+    def generate(self, output_length=100, prompt=None):
         print(f"Generating a new song with {output_length} characters.")
+
         if prompt is None:
-            prompt = [0]
+            prompt = [COMPOUND_WORD_BAR]  # Bar
 
         self.model.eval()
-        initial = torch.tensor([prompt]).long().to(get_device())  # assume 0 is start token
-
-        sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_threshold)
-        return sample.cpu().detach().numpy()[0]
+        sample = self.model.generate(output_length=output_length, prompt=prompt)
+        return sample
 
     def create_model(self):
-        model = ReformerLM(
-            num_tokens=self.dictionary.size(),
-            dim=self.dim,
-            depth=self.depth,
+        model = CompoundWordAutoregressiveWrapper(CompoundWordTransformerWrapper(
+            num_tokens=self.num_tokens,
             max_seq_len=self.max_sequence_length,
-            lsh_dropout=self.dropout,
-            ff_dropout=self.dropout,
-            causal=True,
-            full_attn_thres=self.full_attn_thres,
-            heads=self.heads,
-            reverse_thres=self.max_sequence_length
-        )
+            attn_layers=Decoder(
+                dim=self.dim,
+                depth=self.depth,
+                heads=self.heads,
+                attn_dropout=self.dropout,  # dropout post-attention
+                ff_dropout=self.dropout,  # feedforward dropout
+                rotary_pos_emb=True
+            )
+        )).to(get_device())
 
-        # 0 is used for padding and no loss to be calculated on it
-        training_wrapper = TrainingWrapper(model, ignore_index=0, pad_value=0).to(get_device())
-
-        return training_wrapper
+        return model
 
     def create_optimizer(self):
         return torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
@@ -139,10 +149,9 @@ class ReformerModel(object):
     def save_checkpoint(self, path):
         print(f'Saving checkpoint {path}')
         torch.save({
-            'dictionary': self.dictionary,
+            'num_tokens': self.num_tokens,
             'max_sequence_length': self.max_sequence_length,
             'learning_rate': self.learning_rate,
-            'full_attn_thres': self.full_attn_thres,
             'dropout': self.dropout,
             'dim': self.dim,
             'depth': self.depth,
@@ -152,13 +161,12 @@ class ReformerModel(object):
         }, path)
 
     @staticmethod
-    def load_checkpoint(path) -> ReformerModel:
+    def load_checkpoint(path) -> CompoundWordTransformerModel:
         checkpoint = torch.load(path)
-        model = ReformerModel(
-            dictionary=checkpoint['dictionary'],
+        model = CompoundWordTransformerModel(
+            num_tokens=checkpoint['num_tokens'],
             max_sequence_length=checkpoint['max_sequence_length'],
             learning_rate=checkpoint['learning_rate'],
-            full_attn_thres=checkpoint['full_attn_thres'],
             dropout=checkpoint['dropout'],
             dim=checkpoint['dim'],
             depth=checkpoint['depth'],

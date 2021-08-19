@@ -449,10 +449,18 @@ def extract_data(path, dictionary, transposition_steps=0, map_tracks_to_instrume
     if map_tracks_to_instruments is None:
         map_tracks_to_instruments = {}
     print(f"Extracting data for {path}")
-    events = extract_events(path, transposition_steps=transposition_steps, map_tracks_to_instruments=map_tracks_to_instruments, use_chords=use_chords)
-    words = list(map(lambda x: '{}_{}'.format(x.name, x.value), events))
+    words = extract_words(path, transposition_steps, map_tracks_to_instruments, use_chords)
     data = list(map(lambda x: dictionary.word_to_data(x), words))
     return data
+
+
+def extract_words(path, transposition_steps=0, map_tracks_to_instruments=None, use_chords=True):
+    if map_tracks_to_instruments is None:
+        map_tracks_to_instruments = {}
+    print(f"Extracting data for {path}")
+    events = extract_events(path, transposition_steps=transposition_steps,
+                            map_tracks_to_instruments=map_tracks_to_instruments, use_chords=use_chords)
+    return list(map(lambda x: '{}_{}'.format(x.name, x.value), events))
 
 
 def words_to_events(words):
