@@ -36,7 +36,7 @@ def get_batch(training_data, batch_size, max_sequence_length, randomly_truncate=
 class CompoundWordTransformerModel(object):
 
     def __init__(self,
-                 num_tokens,  # Number of tokens per category []
+                 num_tokens=None,
                  max_sequence_length=512,
                  learning_rate=1e-4,
                  dropout=0.1,
@@ -44,6 +44,16 @@ class CompoundWordTransformerModel(object):
                  depth=12,
                  heads=8
                  ):
+        if num_tokens is None:
+            num_tokens = [
+                4,  # Type
+                17,  # Bar / Beat
+                192,  # Tempo
+                129,  # Instrument
+                128,  # Pitch
+                64,  # Duration
+                32  # Velocity
+            ]
         self.num_tokens = num_tokens
         self.learning_rate = learning_rate
         self.max_sequence_length = max_sequence_length
@@ -54,7 +64,14 @@ class CompoundWordTransformerModel(object):
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
-    def train(self, x_train, epochs, batch_size=4, stop_loss=None, batches_per_epoch=100, report_per_x_batches=20, randomly_truncate=False):
+    def train(self,
+              x_train,
+              epochs,
+              batch_size=4,
+              stop_loss=None,
+              batches_per_epoch=100,
+              report_per_x_batches=20,
+              randomly_truncate=True):
         self.model.train()
         start_time = time.time()
         for epoch in range(epochs):
