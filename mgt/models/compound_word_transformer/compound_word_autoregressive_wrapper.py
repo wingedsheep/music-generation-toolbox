@@ -2,19 +2,11 @@ import random
 
 import torch
 from torch import nn
-from x_transformers.x_transformers import default
+import torch.nn.functional as F
 
 from mgt.models.compound_word_transformer.compound_word_transformer_utils import COMPOUND_WORD_PADDING, pad
 from mgt.models.compound_word_transformer.compound_word_transformer_wrapper import CompoundWordTransformerWrapper
 from mgt.models.utils import get_device
-import torch.nn.functional as F
-
-
-def truncate_sequence(inputs, mask=None, pad_value=COMPOUND_WORD_PADDING):
-    ba, t, device, dtype = *inputs.shape, inputs.device, inputs.dtype
-    mask = default(mask, torch.ones_like(inputs).bool())
-    rand_length = random.randint(2, t)
-    return inputs[:, :rand_length], mask[:, :rand_length]
 
 
 class CompoundWordAutoregressiveWrapper(nn.Module):

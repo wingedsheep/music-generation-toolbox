@@ -8,12 +8,13 @@ import torch
 from x_transformers import Decoder
 
 from mgt.models.compound_word_transformer.compound_word_autoregressive_wrapper import CompoundWordAutoregressiveWrapper
-from mgt.models.compound_word_transformer.compound_word_transformer_utils import COMPOUND_WORD_BAR, pad
+from mgt.models.compound_word_transformer.compound_word_transformer_utils import COMPOUND_WORD_BAR, pad, \
+    COMPOUND_WORD_PADDING
 from mgt.models.compound_word_transformer.compound_word_transformer_wrapper import CompoundWordTransformerWrapper
 from mgt.models.utils import get_device
 
 
-def get_batch(training_data, batch_size, max_sequence_length):
+def get_batch(training_data, batch_size, max_sequence_length, randomly_truncate=False):
     indices = []
     for i in range(batch_size):
         song_index = random.randint(0, len(training_data) - 1)
@@ -23,6 +24,10 @@ def get_batch(training_data, batch_size, max_sequence_length):
     sequences = []
     for selection in indices:
         padded_song = pad(training_data[selection[0]], max_sequence_length + len(training_data[selection[0]]))
+        if randomly_truncate:
+            rand_length = random.randint(0, max_sequence_length - 2)
+            for i in range(rand_length):
+                padded_song[i] = COMPOUND_WORD_PADDING
         sequences.append(padded_song[selection[1]: selection[1] + max_sequence_length + 1])
 
     return sequences
@@ -49,7 +54,7 @@ class CompoundWordTransformerModel(object):
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
-    def train(self, x_train, epochs, batch_size=4, stop_loss=None, batches_per_epoch=100, report_per_x_batches=20):
+    def train(self, x_train, epochs, batch_size=4, stop_loss=None, batches_per_epoch=100, report_per_x_batches=20, randomly_truncate=False):
         self.model.train()
         start_time = time.time()
         for epoch in range(epochs):
@@ -62,7 +67,8 @@ class CompoundWordTransformerModel(object):
                 batch = get_batch(
                     x_train,
                     batch_size=batch_size,
-                    max_sequence_length=self.max_sequence_length)
+                    max_sequence_length=self.max_sequence_length,
+                    randomly_truncate=randomly_truncate)
 
                 torch_batch = torch.tensor(batch).long().to(get_device())
 
