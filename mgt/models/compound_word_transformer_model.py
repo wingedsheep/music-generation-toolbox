@@ -37,6 +37,7 @@ class CompoundWordTransformerModel(object):
 
     def __init__(self,
                  num_tokens=None,
+                 emb_sizes=None,
                  max_sequence_length=512,
                  learning_rate=1e-4,
                  dropout=0.1,
@@ -55,6 +56,7 @@ class CompoundWordTransformerModel(object):
                 32  # Velocity
             ]
         self.num_tokens = num_tokens
+        self.emb_sizes = emb_sizes
         self.learning_rate = learning_rate
         self.max_sequence_length = max_sequence_length
         self.dropout = dropout
@@ -130,6 +132,7 @@ class CompoundWordTransformerModel(object):
     def create_model(self):
         model = CompoundWordAutoregressiveWrapper(CompoundWordTransformerWrapper(
             num_tokens=self.num_tokens,
+            emb_sizes=self.emb_sizes,
             max_seq_len=self.max_sequence_length,
             attn_layers=Decoder(
                 dim=self.dim,
@@ -150,6 +153,7 @@ class CompoundWordTransformerModel(object):
         print(f'Saving checkpoint {path}')
         torch.save({
             'num_tokens': self.num_tokens,
+            'emb_sizes': self.emb_sizes,
             'max_sequence_length': self.max_sequence_length,
             'learning_rate': self.learning_rate,
             'dropout': self.dropout,
@@ -165,6 +169,7 @@ class CompoundWordTransformerModel(object):
         checkpoint = torch.load(path)
         model = CompoundWordTransformerModel(
             num_tokens=checkpoint['num_tokens'],
+            emb_sizes=checkpoint['emb_sizes'],
             max_sequence_length=checkpoint['max_sequence_length'],
             learning_rate=checkpoint['learning_rate'],
             dropout=checkpoint['dropout'],

@@ -20,7 +20,7 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
         self.max_seq_len = net.max_seq_len
 
     @torch.no_grad()
-    def generate(self, prompt, output_length=100):
+    def generate(self, prompt, output_length=100, selection_temperatures=None, selection_probability_tresholds=None):
         self.net.eval()
 
         print('------ initiate ------')
@@ -32,7 +32,11 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
         print('------ generate ------')
         for _ in range(output_length):
             # sample others
-            next_arr = self.net.forward_output_sampling(h[:, -1:, :], y_type[:, -1:, :])
+            next_arr = self.net.forward_output_sampling(
+                h[:, -1:, :],
+                y_type[:, -1:, :],
+                selection_temperatures=selection_temperatures,
+                selection_probability_tresholds=selection_probability_tresholds)
             final_res.append(next_arr.tolist())
 
             # forward
