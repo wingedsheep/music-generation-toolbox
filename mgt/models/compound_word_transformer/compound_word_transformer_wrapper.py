@@ -141,8 +141,9 @@ class CompoundWordTransformerWrapper(nn.Module):
         y_type_logit = y_type[0, :]
         cur_word_type = sampling(
             y_type_logit,
-            probability_treshold=selection_temperatures[0] or None,
-            temperature=selection_temperatures[0] or 1.0)
+            probability_treshold=selection_probability_tresholds.get(0, default=None),
+            temperature=selection_temperatures.get(0, default=1.0)
+        )
 
         type_word_t = torch.from_numpy(np.array([cur_word_type])).long().to(get_device()).unsqueeze(0)
 
@@ -163,32 +164,32 @@ class CompoundWordTransformerWrapper(nn.Module):
         # sampling gen_cond
         cur_word_barbeat = sampling(
             proj_barbeat,
-            probability_treshold=selection_probability_tresholds[1] or None,
-            temperature=selection_temperatures[1] or 1.0)
+            probability_treshold=selection_probability_tresholds.get(1, default=None),
+            temperature=selection_temperatures.get(1, default=1.0))
 
         cur_word_tempo = sampling(
             proj_tempo,
-            probability_treshold=selection_probability_tresholds[2] or None,
-            temperature=selection_temperatures[2] or 1.0)
+            probability_treshold=selection_probability_tresholds.get(2, default=None),
+            temperature=selection_temperatures.get(2, default=1.0))
 
         cur_word_instrument = sampling(
             proj_instrument,
-            probability_treshold=selection_probability_tresholds[3] or None,
-            temperature=selection_temperatures[3] or 1.0)
+            probability_treshold=selection_probability_tresholds.get(3, default=None),
+            temperature=selection_temperatures.get(3, default=1.0))
 
         cur_word_pitch = sampling(
             proj_pitch,
-            probability_treshold=selection_probability_tresholds[4] or None,
-            temperature=selection_temperatures[4] or 1.0)
+            probability_treshold=selection_probability_tresholds.get(4, default=None),
+            temperature=selection_temperatures.get(4, default=1.0))
         cur_word_duration = sampling(
             proj_duration,
-            probability_treshold=selection_probability_tresholds[5] or None,
-            temperature=selection_temperatures[5] or 1.0)
+            probability_treshold=selection_probability_tresholds.get(5, default=None),
+            temperature=selection_temperatures.get(5, default=1.0))
 
         cur_word_velocity = sampling(
             proj_velocity,
-            probability_treshold=selection_probability_tresholds[6] or None,
-            temperature=selection_temperatures[6] or 1.0
+            probability_treshold=selection_probability_tresholds.get(6, default=None),
+            temperature=selection_temperatures.get(6, default=1.0))
         )
 
         # collect
