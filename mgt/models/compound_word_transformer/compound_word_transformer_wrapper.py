@@ -190,7 +190,6 @@ class CompoundWordTransformerWrapper(nn.Module):
             proj_velocity,
             probability_treshold=selection_probability_tresholds.get(6, default=None),
             temperature=selection_temperatures.get(6, default=1.0))
-        )
 
         # collect
         next_arr = np.array([
