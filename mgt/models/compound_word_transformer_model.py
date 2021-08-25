@@ -66,6 +66,10 @@ class CompoundWordTransformerModel(object):
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
+    def set_learning_rate(self, learning_rate):
+        self.learning_rate = learning_rate
+        self.optimizer = self.create_optimizer()
+
     def train(self,
               x_train,
               epochs,
