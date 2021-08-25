@@ -59,6 +59,10 @@ class ReformerModel(object):
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
+    def set_learning_rate(self, learning_rate):
+        self.learning_rate = learning_rate
+        self.optimizer = self.create_optimizer()
+
     def train(self, x_train, epochs, batch_size=3, stop_loss=None, batches_per_epoch=100, report_per_x_batches=5):
         self.model.train()
         start_time = time.time()
