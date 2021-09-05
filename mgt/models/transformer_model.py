@@ -60,7 +60,7 @@ class TransformerModel(object):
         self.learning_rate = learning_rate
         self.optimizer = self.create_optimizer()
 
-    def train(self, x_train, epochs, batch_size=4, stop_loss=None, batches_per_epoch=100, report_per_x_batches=20):
+    def train(self, x_train, epochs, batch_size=4, stop_loss=None, batches_per_epoch=100, report_per_x_batches=20, gradient_accumulation_steps=1):
         self.model.train()
         start_time = time.time()
         for epoch in range(epochs):
@@ -70,15 +70,17 @@ class TransformerModel(object):
             batch_losses = []
             nr_of_batches_processed = 0
             for _ in range(batches_per_epoch):
-                batch = get_batch(
-                    x_train,
-                    batch_size=batch_size,
-                    max_sequence_length=self.max_sequence_length)
 
-                torch_batch = torch.tensor(batch).long().to(get_device())
+                for _ in range(gradient_accumulation_steps):
+                    batch = get_batch(
+                        x_train,
+                        batch_size=batch_size,
+                        max_sequence_length=self.max_sequence_length)
 
-                loss = self.model(torch_batch)
-                loss.backward()
+                    torch_batch = torch.tensor(batch).long().to(get_device())
+
+                    loss = self.model(torch_batch)
+                    loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
                 self.optimizer.step()
