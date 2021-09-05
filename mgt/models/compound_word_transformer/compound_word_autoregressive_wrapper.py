@@ -79,7 +79,7 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
         # Filter padding indices
         type_loss = calculate_loss(proj_type, target[..., 0], type_mask(target))
         barbeat_loss = calculate_loss(proj_barbeat, target[..., 1], timing_mask(target))
-        tempo_loss = calculate_tempo_loss(proj_tempo, target[..., 2], timing_mask(target))
+        tempo_loss = calculate_loss(proj_tempo, target[..., 2], timing_mask(target))
         instrument_loss = calculate_loss(proj_instrument, target[..., 3], note_mask(target))
         pitch_loss = calculate_loss(proj_pitch, target[..., 4], note_mask(target))
         duration_loss = calculate_loss(proj_duration, target[..., 5], note_mask(target))
