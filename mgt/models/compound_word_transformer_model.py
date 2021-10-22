@@ -37,6 +37,7 @@ class CompoundWordTransformerModel(object):
 
     def __init__(self,
                  num_tokens=None,
+                 emb_sizes=None,
                  max_sequence_length=512,
                  learning_rate=1e-4,
                  dropout=0.1,
@@ -55,6 +56,7 @@ class CompoundWordTransformerModel(object):
                 32  # Velocity
             ]
         self.num_tokens = num_tokens
+        self.emb_sizes = emb_sizes
         self.learning_rate = learning_rate
         self.max_sequence_length = max_sequence_length
         self.dropout = dropout
@@ -64,6 +66,10 @@ class CompoundWordTransformerModel(object):
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
+    def set_learning_rate(self, learning_rate):
+        self.learning_rate = learning_rate
+        self.optimizer = self.create_optimizer()
+
     def train(self,
               x_train,
               epochs,
@@ -71,7 +77,8 @@ class CompoundWordTransformerModel(object):
               stop_loss=None,
               batches_per_epoch=100,
               report_per_x_batches=20,
-              randomly_truncate=True):
+              randomly_truncate=True,
+              gradient_accumulation_steps=1):
         self.model.train()
         start_time = time.time()
         for epoch in range(epochs):
@@ -81,17 +88,18 @@ class CompoundWordTransformerModel(object):
             batch_losses = []
             nr_of_batches_processed = 0
             for _ in range(batches_per_epoch):
-                batch = get_batch(
-                    x_train,
-                    batch_size=batch_size,
-                    max_sequence_length=self.max_sequence_length,
-                    randomly_truncate=randomly_truncate)
+                for _ in range(gradient_accumulation_steps):
+                    batch = get_batch(
+                        x_train,
+                        batch_size=batch_size,
+                        max_sequence_length=self.max_sequence_length,
+                        randomly_truncate=randomly_truncate)
 
-                torch_batch = torch.tensor(batch).long().to(get_device())
+                    torch_batch = torch.tensor(batch).long().to(get_device())
 
-                losses = self.model.train_step(torch_batch)
-                loss = (losses[0] + losses[1] + losses[2] + losses[3] + losses[4] + losses[5] + losses[6]) / 7
-                loss.backward()
+                    losses = self.model.train_step(torch_batch)
+                    loss = (losses[0] + losses[1] + losses[2] + losses[3] + losses[4] + losses[5] + losses[6]) / 7
+                    loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
                 self.optimizer.step()
@@ -130,6 +138,7 @@ class CompoundWordTransformerModel(object):
     def create_model(self):
         model = CompoundWordAutoregressiveWrapper(CompoundWordTransformerWrapper(
             num_tokens=self.num_tokens,
+            emb_sizes=self.emb_sizes,
             max_seq_len=self.max_sequence_length,
             attn_layers=Decoder(
                 dim=self.dim,
@@ -150,6 +159,7 @@ class CompoundWordTransformerModel(object):
         print(f'Saving checkpoint {path}')
         torch.save({
             'num_tokens': self.num_tokens,
+            'emb_sizes': self.emb_sizes,
             'max_sequence_length': self.max_sequence_length,
             'learning_rate': self.learning_rate,
             'dropout': self.dropout,
@@ -165,6 +175,7 @@ class CompoundWordTransformerModel(object):
         checkpoint = torch.load(path)
         model = CompoundWordTransformerModel(
             num_tokens=checkpoint['num_tokens'],
+            emb_sizes=checkpoint['emb_sizes'],
             max_sequence_length=checkpoint['max_sequence_length'],
             learning_rate=checkpoint['learning_rate'],
             dropout=checkpoint['dropout'],

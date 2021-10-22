@@ -25,12 +25,12 @@ def weighted_sampling(probs):
 
 
 # -- nucleus -- #
-def nucleus(probs, p):
+def nucleus(probs, probability_treshold):
     probs /= (sum(probs) + 1e-5)
     sorted_probs = np.sort(probs)[::-1]
     sorted_index = np.argsort(probs)[::-1]
     cusum_sorted_probs = np.cumsum(sorted_probs)
-    after_threshold = cusum_sorted_probs > p
+    after_threshold = cusum_sorted_probs > probability_treshold
     if sum(after_threshold) > 0:
         last_index = np.where(after_threshold)[0][0] + 1
         candi_index = sorted_index[:last_index]
@@ -42,12 +42,12 @@ def nucleus(probs, p):
     return word
 
 
-def sampling(logit, p=None, t=1.0):
+def sampling(logit, probability_treshold=None, temperature=1.0):
     logit = logit.squeeze().cpu().detach().numpy()
-    probs = softmax_with_temperature(logits=logit, temperature=t)
+    probs = softmax_with_temperature(logits=logit, temperature=temperature)
 
-    if p is not None:
-        cur_word = nucleus(probs, p=p)
+    if probability_treshold is not None:
+        cur_word = nucleus(probs, probability_treshold=probability_treshold)
     else:
         cur_word = weighted_sampling(probs)
     return cur_word
@@ -71,10 +71,10 @@ class CompoundWordTransformerWrapper(nn.Module):
         if emb_sizes is None:
             emb_sizes = [
                 32,  # Type
-                64,  # Bar / Beat
+                96,  # Bar / Beat
                 128,  # Tempo
-                128,  # Instrument
-                384,  # Pitch
+                512,  # Instrument
+                512,  # Pitch
                 128,  # Duration
                 128,  # Velocity
             ]
@@ -130,10 +130,20 @@ class CompoundWordTransformerWrapper(nn.Module):
         nn.init.normal_(self.word_emb_duration.weight(), std=0.02)
         nn.init.normal_(self.word_emb_velocity.weight(), std=0.02)
 
-    def forward_output_sampling(self, h, y_type):
+    def forward_output_sampling(self, h, y_type, selection_temperatures=None, selection_probability_tresholds=None):
         # sample type
+        if selection_probability_tresholds is None:
+            selection_probability_tresholds = {}
+
+        if selection_temperatures is None:
+            selection_temperatures = {}
+
         y_type_logit = y_type[0, :]
-        cur_word_type = sampling(y_type_logit, p=0.90)
+        cur_word_type = sampling(
+            y_type_logit,
+            probability_treshold=selection_probability_tresholds.get(0, None),
+            temperature=selection_temperatures.get(0, 1.0)
+        )
 
         type_word_t = torch.from_numpy(np.array([cur_word_type])).long().to(get_device()).unsqueeze(0)
 
@@ -152,12 +162,34 @@ class CompoundWordTransformerWrapper(nn.Module):
         proj_velocity = self.proj_velocity(y_)
 
         # sampling gen_cond
-        cur_word_barbeat = sampling(proj_barbeat)
-        cur_word_tempo = sampling(proj_tempo, p=0.9)
-        cur_word_instrument = sampling(proj_instrument, p=0.9)
-        cur_word_pitch = sampling(proj_pitch, p=0.9)
-        cur_word_duration = sampling(proj_duration)
-        cur_word_velocity = sampling(proj_velocity)
+        cur_word_barbeat = sampling(
+            proj_barbeat,
+            probability_treshold=selection_probability_tresholds.get(1, None),
+            temperature=selection_temperatures.get(1, 1.0))
+
+        cur_word_tempo = sampling(
+            proj_tempo,
+            probability_treshold=selection_probability_tresholds.get(2, None),
+            temperature=selection_temperatures.get(2, 1.0))
+
+        cur_word_instrument = sampling(
+            proj_instrument,
+            probability_treshold=selection_probability_tresholds.get(3, None),
+            temperature=selection_temperatures.get(3, 1.0))
+
+        cur_word_pitch = sampling(
+            proj_pitch,
+            probability_treshold=selection_probability_tresholds.get(4, None),
+            temperature=selection_temperatures.get(4, 1.0))
+        cur_word_duration = sampling(
+            proj_duration,
+            probability_treshold=selection_probability_tresholds.get(5, None),
+            temperature=selection_temperatures.get(5, 1.0))
+
+        cur_word_velocity = sampling(
+            proj_velocity,
+            probability_treshold=selection_probability_tresholds.get(6, None),
+            temperature=selection_temperatures.get(6, 1.0))
 
         # collect
         next_arr = np.array([
