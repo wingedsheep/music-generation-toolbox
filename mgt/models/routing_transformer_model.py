@@ -1,7 +1,6 @@
 from __future__ import annotations
 from datetime import time
 
-import random
 import time
 
 import torch
@@ -10,29 +9,7 @@ import numpy as np
 from mgt.datamanagers.data_manager import Dictionary
 from routing_transformer import RoutingTransformerLM, AutoregressiveWrapper
 
-
-def pad(array, max_sequence_length, padding_character=0):
-    return list(np.repeat(padding_character, max_sequence_length)) + array
-
-
-def get_batch(training_data, batch_size, max_sequence_length):
-    indices = []
-    for i in range(batch_size):
-        song_index = random.randint(0, len(training_data) - 1)
-        starting_index = random.randint(0, len(training_data[song_index]) - 1)
-        indices.append((song_index, starting_index))
-
-    sequences = []
-    for selection in indices:
-        padded_song = pad(training_data[selection[0]], max_sequence_length)
-        sequences.append(padded_song[selection[1]: selection[1] + max_sequence_length + 1])
-
-    return sequences
-
-
-def get_device():
-    return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
+from mgt.models import utils
 
 defaults = {
     'max_sequence_length': 2048,
@@ -44,10 +21,6 @@ defaults = {
     'window_size': 128,
     'reversible': True
 }
-
-
-def get_or_default(dictionary: dict, key: str):
-    return dictionary[key] if key in dictionary else defaults[key]
 
 
 class RoutingTransformerModel(object):
@@ -99,12 +72,12 @@ class RoutingTransformerModel(object):
             nr_of_batches_processed = 0
             for _ in range(batches_per_epoch):
                 for _ in range(gradient_accumulation_steps):
-                    batch = get_batch(
+                    batch = utils.get_batch(
                         x_train,
                         batch_size=batch_size,
                         max_sequence_length=self.max_sequence_length)
 
-                    torch_batch = torch.tensor(batch).long().to(get_device())
+                    torch_batch = torch.tensor(batch).long().to(utils.get_device())
 
                     loss = self.model(torch_batch, return_loss=True, randomly_truncate_sequence=True)
                     loss.backward()
@@ -139,7 +112,7 @@ class RoutingTransformerModel(object):
             prompt = [0]
 
         self.model.eval()
-        initial = torch.tensor([prompt]).long().to(get_device())  # assume 0 is start token
+        initial = torch.tensor([prompt]).long().to(utils.get_device())  # assume 0 is start token
 
         sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_treshold)
         return sample.cpu().detach().numpy()[0]
@@ -161,7 +134,7 @@ class RoutingTransformerModel(object):
         model = AutoregressiveWrapper(model,
                                       ignore_index=0,
                                       pad_value=0
-                                      ).to(get_device())
+                                      ).to(utils.get_device())
 
         return model
 
@@ -189,17 +162,16 @@ class RoutingTransformerModel(object):
 
         model = RoutingTransformerModel(
             dictionary=checkpoint['dictionary'],
-            max_sequence_length=get_or_default(checkpoint, 'max_sequence_length'),
-            learning_rate=get_or_default(checkpoint, 'learning_rate'),
-            dropout=get_or_default(checkpoint, 'dropout'),
-            dim=get_or_default(checkpoint, 'dim'),
-            depth=get_or_default(checkpoint, 'depth'),
-            window_size=get_or_default(checkpoint, 'window_size'),
-            heads=get_or_default(checkpoint, 'heads'),
-            reversible=get_or_default(checkpoint, 'reversible')
+            max_sequence_length=utils.get_or_default(checkpoint, 'max_sequence_length', defaults),
+            learning_rate=utils.get_or_default(checkpoint, 'learning_rate', defaults),
+            dropout=utils.get_or_default(checkpoint, 'dropout', defaults),
+            dim=utils.get_or_default(checkpoint, 'dim', defaults),
+            depth=utils.get_or_default(checkpoint, 'depth', defaults),
+            window_size=utils.get_or_default(checkpoint, 'window_size', defaults),
+            heads=utils.get_or_default(checkpoint, 'heads', defaults),
+            reversible=utils.get_or_default(checkpoint, 'reversible', defaults)
         )
 
         model.model.load_state_dict(checkpoint['model_state_dict'], strict=False)
-        model.create_optimizer()
 
         return model
