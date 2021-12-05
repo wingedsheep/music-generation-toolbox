@@ -1,33 +1,44 @@
-from pretty_midi import pretty_midi
-
 from mgt.datamanagers.compound_word.compound_word_mapper import CompoundWordMapper
 from mgt.datamanagers.data_manager import DataManager, DataSet
 from mgt.datamanagers.midi_wrapper import MidiWrapper, MidiToolkitWrapper
-from mgt.datamanagers.remi import util
+from mgt.datamanagers.remi.data_extractor import DataExtractor
 from mgt.datamanagers.remi.dictionary_generator import DictionaryGenerator
+from mgt.datamanagers.remi.to_midi_mapper import ToMidiMapper
+
+
+defaults = {
+    'transposition_steps': [0],
+    'map_tracks_to_instruments': {}
+}
 
 
 class CompoundWordDataManager(DataManager):
 
-    def __init__(self, transposition_steps=None, map_tracks_to_instruments=None):
-        if map_tracks_to_instruments is None:
-            map_tracks_to_instruments = {}
-        if transposition_steps is None:
-            transposition_steps = [0]
+    def __init__(
+            self,
+            transposition_steps=defaults['transposition_steps'],
+            map_tracks_to_instruments=defaults['map_tracks_to_instruments'],
+            instrument_mapping=defaults['instrument_mapping']
+    ):
         self.transposition_steps = transposition_steps
         self.map_tracks_to_instruments = map_tracks_to_instruments
+        self.instrument_mapping = instrument_mapping
         self.dictionary = DictionaryGenerator.create_dictionary()
         self.compound_word_mapper = CompoundWordMapper(self.dictionary)
+        self.data_extractor = DataExtractor(
+            dictionary=self.dictionary,
+            map_tracks_to_instruments=self.map_tracks_to_instruments,
+            use_chords=False,
+            instrument_mapping=self.instrument_mapping
+        )
+        self.to_midi_mapper = ToMidiMapper(self.dictionary)
 
     def prepare_data(self, midi_paths) -> DataSet:
         training_data = []
         for path in midi_paths:
             for transposition_step in self.transposition_steps:
                 try:
-                    data = util.extract_words(path,
-                                              transposition_steps=transposition_step,
-                                              map_tracks_to_instruments=self.map_tracks_to_instruments,
-                                              use_chords=False)
+                    data = self.data_extractor.extract_data(path, transposition_step)
 
                     compound_words = self.compound_word_mapper.map_to_compound(data, self.dictionary)
                     compound_data = self.compound_word_mapper.map_compound_words_to_data(compound_words)
@@ -46,4 +57,4 @@ class CompoundWordDataManager(DataManager):
 
     def to_midi(self, data) -> MidiWrapper:
         remi = self.compound_word_mapper.map_to_remi(data)
-        return MidiToolkitWrapper(util.to_midi(remi, self.dictionary))
+        return MidiToolkitWrapper(self.to_midi_mapper.to_midi(remi))
