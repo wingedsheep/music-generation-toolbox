@@ -11,7 +11,13 @@ from mgt.datamanagers.remi.item import Item
 
 class DataExtractor(object):
 
-    def __init__(self, dictionary: Dictionary, map_tracks_to_instruments: {}, use_chords: bool, instrument_mapping: {}):
+    def __init__(
+            self,
+            dictionary: Dictionary,
+            map_tracks_to_instruments: {},
+            use_chords: bool,
+            instrument_mapping: {}
+    ):
         self.dictionary = dictionary
         self.map_tracks_to_instruments = map_tracks_to_instruments
         self.use_chords = use_chords
@@ -57,6 +63,10 @@ class DataExtractor(object):
                 program = self.map_tracks_to_instruments.get(index)
             else:
                 program = DRUM_INSTRUMENT if instrument.is_drum else instrument.program
+                if program in self.instrument_mapping:
+                    program = self.instrument_mapping[program]
+                    if program is None:
+                        continue
             for note in instrument.notes:
                 notes.append({'note': note, 'instrument': program})
 
