@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import time
-import random
 
 import numpy as np
 import torch
@@ -11,47 +10,35 @@ from reformer_pytorch import ReformerLM
 from reformer_pytorch.generative_tools import TrainingWrapper
 
 from mgt.datamanagers.data_manager import Dictionary
+from mgt.models import utils
 
-
-def pad(array, max_sequence_length, padding_character=0):
-    return list(np.repeat(padding_character, max_sequence_length)) + array
-
-
-def get_batch(training_data, batch_size, max_sequence_length):
-    indices = []
-    for i in range(batch_size):
-        song_index = random.randint(0, len(training_data) - 1)
-        starting_index = random.randint(0, len(training_data[song_index]) - 1)
-        indices.append((song_index, starting_index))
-
-    sequences = []
-    for selection in indices:
-        padded_song = pad(training_data[selection[0]], max_sequence_length)
-        sequences.append(padded_song[selection[1]: selection[1] + max_sequence_length + 1])
-
-    return sequences
-
-
-def get_device():
-    return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+defaults = {
+    'max_sequence_length': 4096,
+    'learning_rate': 1e-4,
+    'full_attention_threshold': 512,
+    'dropout': 0.1,
+    'depth': 3,
+    'dim': 512,
+    'heads': 8
+}
 
 
 class ReformerModel(object):
 
     def __init__(self,
                  dictionary: Dictionary,
-                 max_sequence_length=4096,
-                 learning_rate=1e-4,
-                 full_attn_thres=512,
-                 dropout=0.1,
-                 depth=3,
-                 dim=512,
-                 heads=8
+                 max_sequence_length=defaults['max_sequence_length'],
+                 learning_rate=defaults['learning_rate'],
+                 full_attention_threshold=defaults['full_attention_threshold'],
+                 dropout=defaults['dropout'],
+                 depth=defaults['depth'],
+                 dim=defaults['dim'],
+                 heads=defaults['heads']
                  ):
         self.dictionary = dictionary
         self.max_sequence_length = max_sequence_length
         self.learning_rate = learning_rate
-        self.full_attn_thres = full_attn_thres
+        self.full_attention_threshold = full_attention_threshold
         self.dropout = dropout
         self.depth = depth
         self.dim = dim
@@ -73,13 +60,13 @@ class ReformerModel(object):
             batch_losses = []
             nr_of_batches_processed = 0
             for _ in range(batches_per_epoch):
-                batch = get_batch(
+                batch = utils.get_batch(
                     x_train,
                     batch_size=batch_size,
                     max_sequence_length=self.max_sequence_length)
 
                 # when training, set return_loss equal to True
-                torch_batch = [torch.tensor(x).long().to(get_device()) for x in batch]
+                torch_batch = [torch.tensor(x).long().to(utils.get_device()) for x in batch]
 
                 loss = self.model(torch_batch, return_loss=True)
                 loss.backward()
@@ -96,7 +83,8 @@ class ReformerModel(object):
                 epoch_losses.append(loss_item)
 
                 if nr_of_batches_processed % report_per_x_batches == 0:
-                    print(f"Processed {nr_of_batches_processed} / {batches_per_epoch} with loss {np.mean(batch_losses)}.")
+                    print(
+                        f"Processed {nr_of_batches_processed} / {batches_per_epoch} with loss {np.mean(batch_losses)}.")
                     batch_losses = []
 
             epoch_loss = np.mean(epoch_losses)
@@ -113,7 +101,7 @@ class ReformerModel(object):
             prompt = [0]
 
         self.model.eval()
-        initial = torch.tensor([prompt]).long().to(get_device())  # assume 0 is start token
+        initial = torch.tensor([prompt]).long().to(utils.get_device())  # assume 0 is start token
 
         sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_threshold)
         return sample.cpu().detach().numpy()[0]
@@ -127,13 +115,13 @@ class ReformerModel(object):
             lsh_dropout=self.dropout,
             ff_dropout=self.dropout,
             causal=True,
-            full_attn_thres=self.full_attn_thres,
+            full_attn_thres=self.full_attention_threshold,
             heads=self.heads,
             reverse_thres=self.max_sequence_length
         )
 
         # 0 is used for padding and no loss to be calculated on it
-        training_wrapper = TrainingWrapper(model, ignore_index=0, pad_value=0).to(get_device())
+        training_wrapper = TrainingWrapper(model, ignore_index=0, pad_value=0).to(utils.get_device())
 
         return training_wrapper
 
@@ -146,7 +134,7 @@ class ReformerModel(object):
             'dictionary': self.dictionary,
             'max_sequence_length': self.max_sequence_length,
             'learning_rate': self.learning_rate,
-            'full_attn_thres': self.full_attn_thres,
+            'full_attention_threshold': self.full_attention_threshold,
             'dropout': self.dropout,
             'dim': self.dim,
             'depth': self.depth,
@@ -160,16 +148,15 @@ class ReformerModel(object):
         checkpoint = torch.load(path)
         model = ReformerModel(
             dictionary=checkpoint['dictionary'],
-            max_sequence_length=checkpoint['max_sequence_length'],
-            learning_rate=checkpoint['learning_rate'],
-            full_attn_thres=checkpoint['full_attn_thres'],
-            dropout=checkpoint['dropout'],
-            dim=checkpoint['dim'],
-            depth=checkpoint['depth'],
-            heads=checkpoint['heads']
+            max_sequence_length=utils.get_or_default(checkpoint, 'max_sequence_length', defaults),
+            learning_rate=utils.get_or_default(checkpoint, 'learning_rate', defaults),
+            full_attention_threshold=utils.get_or_default(checkpoint, 'full_attention_threshold', defaults),
+            dropout=utils.get_or_default(checkpoint, 'dropout', defaults),
+            dim=utils.get_or_default(checkpoint, 'dim', defaults),
+            depth=utils.get_or_default(checkpoint, 'depth', defaults),
+            heads=utils.get_or_default(checkpoint, 'heads', defaults)
         )
 
-        model.model.load_state_dict(checkpoint['model_state_dict'])
-        model.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        model.model.load_state_dict(checkpoint['model_state_dict'], strict=False)
 
         return model

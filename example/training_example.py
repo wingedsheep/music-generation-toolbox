@@ -1,34 +1,25 @@
-from mgt.datamanagers.time_shift_data_manager import TimeShiftDataManager
+from mgt.datamanagers.remi_data_manager import RemiDataManager
 from mgt.models.transformer_model import TransformerModel
 
 import os
 import glob
 
+# Collect the midi paths
+midi_path = 'YOUR MIDI PATH'
+midi_path = os.path.join(os.path.dirname(__file__), midi_path)
+midis = glob.glob(midi_path + '*.mid')
 
-def run():
-    """
-    Example showing how to train a new model and generate new music with it.
-    """
+# Create the datamanager and prepare the data
+datamanager = RemiDataManager()
+dataset = datamanager.prepare_data(midis)
 
-    midi_path = '../data/pop/'
-    midi_path = os.path.join(os.path.dirname(__file__), midi_path)
-    midis = glob.glob(midi_path + '*.mid')
+# Create and train the model
+model = TransformerModel(dataset.dictionary)
+model.train(x_train=dataset.data, epochs=50, stop_loss=0.1)
 
-    time_shift_data_manager = TimeShiftDataManager()
-    dataset = time_shift_data_manager.prepare_data(midis)
+# Generate music
+output = model.generate(1000)
 
-    model = TransformerModel(dataset.dictionary)
-
-    print("Created model. Starting training for 50 epochs.")
-    model.train(x_train=dataset.data, epochs=50, stop_loss=0.1)
-
-    # Generate music
-    print("Generating music.")
-    output = model.generate(1000)
-
-    # Restore events from input data
-    midi = time_shift_data_manager.to_midi(output)
-    midi.save("result.midi")
-
-
-run()
+# Restore events from input data
+midi = datamanager.to_midi(output)
+midi.save("result.midi")

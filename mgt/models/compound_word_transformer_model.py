@@ -7,6 +7,7 @@ import numpy as np
 import torch
 from x_transformers import Decoder
 
+from mgt.models import utils
 from mgt.models.compound_word_transformer.compound_word_autoregressive_wrapper import CompoundWordAutoregressiveWrapper
 from mgt.models.compound_word_transformer.compound_word_transformer_utils import COMPOUND_WORD_BAR, pad, \
     COMPOUND_WORD_PADDING
@@ -33,28 +34,46 @@ def get_batch(training_data, batch_size, max_sequence_length, randomly_truncate=
     return sequences
 
 
+defaults = {
+    'num_tokens': [
+        4,    # Type
+        17,   # Bar / Beat
+        192,  # Tempo
+        129,  # Instrument
+        128,  # Pitch
+        64,   # Duration
+        32    # Velocity
+    ],
+    'emb_sizes': [
+        32,   # Type
+        96,   # Bar / Beat
+        128,  # Tempo
+        512,  # Instrument
+        512,  # Pitch
+        128,  # Duration
+        128   # Velocity
+    ],
+    'max_sequence_length': 512,
+    'learning_rate': 1e-4,
+    'dropout': 0.1,
+    'dim': 512,
+    'depth': 12,
+    'heads': 8
+}
+
+
 class CompoundWordTransformerModel(object):
 
     def __init__(self,
-                 num_tokens=None,
-                 emb_sizes=None,
-                 max_sequence_length=512,
-                 learning_rate=1e-4,
-                 dropout=0.1,
-                 dim=512,
-                 depth=12,
-                 heads=8
+                 num_tokens=defaults['num_tokens'],
+                 emb_sizes=defaults['emb_sizes'],
+                 max_sequence_length=defaults['max_sequence_length'],
+                 learning_rate=defaults['learning_rate'],
+                 dropout=defaults['dropout'],
+                 dim=defaults['dim'],
+                 depth=defaults['depth'],
+                 heads=defaults['heads']
                  ):
-        if num_tokens is None:
-            num_tokens = [
-                4,  # Type
-                17,  # Bar / Beat
-                192,  # Tempo
-                129,  # Instrument
-                128,  # Pitch
-                64,  # Duration
-                32  # Velocity
-            ]
         self.num_tokens = num_tokens
         self.emb_sizes = emb_sizes
         self.learning_rate = learning_rate
@@ -174,17 +193,16 @@ class CompoundWordTransformerModel(object):
     def load_checkpoint(path) -> CompoundWordTransformerModel:
         checkpoint = torch.load(path)
         model = CompoundWordTransformerModel(
-            num_tokens=checkpoint['num_tokens'],
-            emb_sizes=checkpoint['emb_sizes'],
-            max_sequence_length=checkpoint['max_sequence_length'],
-            learning_rate=checkpoint['learning_rate'],
-            dropout=checkpoint['dropout'],
-            dim=checkpoint['dim'],
-            depth=checkpoint['depth'],
-            heads=checkpoint['heads']
+            num_tokens=utils.get_or_default(checkpoint, 'num_tokens', defaults),
+            emb_sizes=utils.get_or_default(checkpoint, 'emb_sizes', defaults),
+            max_sequence_length=utils.get_or_default(checkpoint, 'max_sequence_length', defaults),
+            learning_rate=utils.get_or_default(checkpoint, 'learning_rate', defaults),
+            dropout=utils.get_or_default(checkpoint, 'dropout', defaults),
+            dim=utils.get_or_default(checkpoint, 'dim', defaults),
+            depth=utils.get_or_default(checkpoint, 'depth', defaults),
+            heads=utils.get_or_default(checkpoint, 'heads', defaults)
         )
 
         model.model.load_state_dict(checkpoint['model_state_dict'])
-        model.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
         return model
