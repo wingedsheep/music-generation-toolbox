@@ -49,9 +49,11 @@ simplified_instruments = {
     50: 41,
     51: 41,
     52: 41,
+    95: 41,         # Slow drift
     # Voices
     54: 53,
     55: 53,
+    91: 53,         # Dream voice
     # Brass
     58: 57,
     59: 57,
