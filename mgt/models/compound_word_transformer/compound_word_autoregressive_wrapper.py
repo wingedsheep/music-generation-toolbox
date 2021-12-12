@@ -10,17 +10,6 @@ from mgt.models.utils import get_device
 def type_mask(target):
     return target[..., 0] != 0
 
-
-def timing_mask(target):
-    typemask = type_mask(target)
-    return target[..., 0] == 2 * typemask
-
-
-def note_mask(target):
-    typemask = type_mask(target)
-    return target[..., 0] == 3 * typemask
-
-
 def calculate_loss(predicted, target, loss_mask):
     trainable_values = torch.sum(loss_mask)
     if trainable_values == 0:
