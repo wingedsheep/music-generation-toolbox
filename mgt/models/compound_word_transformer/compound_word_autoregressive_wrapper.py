@@ -12,11 +12,13 @@ def type_mask(target):
 
 
 def timing_mask(target):
-    return target[..., 0] == 2
+    typemask = type_mask(target)
+    return target[..., 0] == 2 * typemask
 
 
 def note_mask(target):
-    return target[..., 0] == 3
+    typemask = type_mask(target)
+    return target[..., 0] == 3 * typemask
 
 
 def calculate_loss(predicted, target, loss_mask):
