@@ -10,15 +10,6 @@ from mgt.models.utils import get_device
 def type_mask(target):
     return target[..., 0] != 0
 
-
-def timing_mask(target):
-    return target[..., 0] == 2
-
-
-def note_mask(target):
-    return target[..., 0] == 3
-
-
 def calculate_loss(predicted, target, loss_mask):
     trainable_values = torch.sum(loss_mask)
     if trainable_values == 0:
@@ -78,11 +69,11 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
                                                                                                                       target)
         # Filter padding indices
         type_loss = calculate_loss(proj_type, target[..., 0], type_mask(target))
-        barbeat_loss = calculate_loss(proj_barbeat, target[..., 1], timing_mask(target))
-        tempo_loss = calculate_loss(proj_tempo, target[..., 2], timing_mask(target))
-        instrument_loss = calculate_loss(proj_instrument, target[..., 3], note_mask(target))
-        pitch_loss = calculate_loss(proj_pitch, target[..., 4], note_mask(target))
-        duration_loss = calculate_loss(proj_duration, target[..., 5], note_mask(target))
-        velocity_loss = calculate_loss(proj_velocity, target[..., 6], note_mask(target))
+        barbeat_loss = calculate_loss(proj_barbeat, target[..., 1], type_mask(target))
+        tempo_loss = calculate_loss(proj_tempo, target[..., 2], type_mask(target))
+        instrument_loss = calculate_loss(proj_instrument, target[..., 3], type_mask(target))
+        pitch_loss = calculate_loss(proj_pitch, target[..., 4], type_mask(target))
+        duration_loss = calculate_loss(proj_duration, target[..., 5], type_mask(target))
+        velocity_loss = calculate_loss(proj_velocity, target[..., 6], type_mask(target))
 
         return type_loss, barbeat_loss, tempo_loss, instrument_loss, pitch_loss, duration_loss, velocity_loss

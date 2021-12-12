@@ -8,7 +8,8 @@ from mgt.datamanagers.remi.to_midi_mapper import ToMidiMapper
 
 defaults = {
     'transposition_steps': [0],
-    'map_tracks_to_instruments': {}
+    'map_tracks_to_instruments': {},
+    'instrument_mapping': {}
 }
 
 
@@ -46,7 +47,7 @@ class CompoundWordDataManager(DataManager):
         for path in midi_paths:
             for transposition_step in self.transposition_steps:
                 try:
-                    data = self.data_extractor.extract_data(path, transposition_step)
+                    data = self.data_extractor.extract_words(path, transposition_step)
 
                     compound_words = self.compound_word_mapper.map_to_compound(data, self.dictionary)
                     compound_data = self.compound_word_mapper.map_compound_words_to_data(compound_words)
