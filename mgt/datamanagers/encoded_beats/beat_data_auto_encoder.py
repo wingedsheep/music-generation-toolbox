@@ -61,7 +61,8 @@ class BeatDataAutoEncoder(object):
         return self.model.encoder.forward(tensor).cpu().detach().numpy()
 
     def decode(self, encoded):
-        return [round(x) for x in self.model.decoder.forward(encoded).cpu().detach().numpy()]
+        tensor = torch.tensor(encoded).float().to(utils.get_device())
+        return [round(x) for x in self.model.decoder.forward(tensor).cpu().detach().numpy()]
 
     def create_model(self):
         return LINEAR_AE(

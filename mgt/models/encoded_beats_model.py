@@ -2,12 +2,11 @@ import random
 import time
 
 import torch
-from x_transformers import AutoregressiveWrapper, Decoder, ContinuousTransformerWrapper
+from x_transformers import Decoder, ContinuousTransformerWrapper, ContinuousAutoregressiveWrapper
 import numpy as np
 
 from mgt.datamanagers.encoded_beats.beat_data_auto_encoder import BeatDataAutoEncoder
 from mgt.models import utils
-from mgt.models.encoded_beats.continuous_autoregressive_wrapper import ContinuousAutoregressiveWrapper
 
 defaults = {
     'auto_encoder': BeatDataAutoEncoder(),
@@ -118,7 +117,7 @@ class EncodedBeatsModel(object):
             running_time = (time.time() - start_time)
             print(f"Loss after epoch {epoch + 1} is {epoch_loss}. Running time: {running_time}")
 
-    def generate(self, output_length=20, temperature=1., filter_treshold=0.9, prompt=None):
+    def generate(self, output_length=20, prompt=None):
         print(f"Generating a new song with {output_length} beats.")
         if prompt is None:
             prompt = [self.padding_vector]
@@ -126,8 +125,12 @@ class EncodedBeatsModel(object):
         self.model.eval()
         initial = torch.tensor(prompt).float().to(utils.get_device())
 
-        sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_treshold)
-        return sample.cpu().detach().numpy()[0]
+        encoded_sample = self.model.generate(initial, output_length)
+        encoded_sample = encoded_sample.cpu().detach().numpy()
+
+        decoded_sample = [self.auto_encoder.decode(x) for x in encoded_sample]
+
+        return decoded_sample
 
     def create_model(self):
         model = ContinuousAutoregressiveWrapper(ContinuousTransformerWrapper(
