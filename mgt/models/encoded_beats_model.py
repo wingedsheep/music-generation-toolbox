@@ -27,22 +27,15 @@ def pad_right(song_beat_vectors, max_sequence_length, padding_vector):
     return padded_song_beat_vectors
 
 
-def pad_left(song_beat_vectors, max_sequence_length, padding_vector):
-    padded_song_beat_vectors = song_beat_vectors.copy()
-    while len(padded_song_beat_vectors) < max_sequence_length:
-        padded_song_beat_vectors = np.insert(padded_song_beat_vectors, 0, [padding_vector], 0)
-    return padded_song_beat_vectors
-
-
 def get_batch(x_train, batch_size, max_sequence_length, padding_vector):
     indices = []
     for i in range(batch_size):
         song_index = random.randint(0, len(x_train) - 1)
-        starting_index = random.randint(0, max(0, len(x_train[song_index]) - 1))
+        starting_index = random.randint(0, max(0, len(x_train[song_index]) - 1 - max_sequence_length))
         indices.append((song_index, starting_index))
 
     return np.array(list(map(
-        lambda index: pad_left(x_train[index[0]], max_sequence_length, padding_vector)[index[1]:],
+        lambda index: pad_right(x_train[index[0]][index[1]:], max_sequence_length, padding_vector),
         indices
     )))
 
