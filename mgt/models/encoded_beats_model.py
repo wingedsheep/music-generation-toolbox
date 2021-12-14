@@ -31,7 +31,7 @@ def get_batch(x_train, batch_size, max_sequence_length, padding_vector):
     indices = []
     for i in range(batch_size):
         song_index = random.randint(0, len(x_train) - 1)
-        starting_index = random.randint(0, max(0, len(x_train[song_index]) - 1 - max_sequence_length))
+        starting_index = random.randint(0, max(0, len(x_train[song_index]) - 1))
         indices.append((song_index, starting_index))
 
     return np.array(list(map(
