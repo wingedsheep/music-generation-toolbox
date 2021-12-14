@@ -11,7 +11,7 @@ from mgt.models import utils
 defaults = {
     'auto_encoder': BeatDataAutoEncoder(),
     'max_sequence_length': 512,
-    'vector_dimension': 512,
+    'auto_encoder_embedding_dimension': 512,
     'embedding_dimension': 512,
     'dropout': 0.1,
     'depth': 12,
@@ -46,7 +46,6 @@ class EncodedBeatsModel(object):
             self,
             auto_encoder: BeatDataAutoEncoder = defaults['auto_encoder'],
             max_sequence_length: int = defaults['max_sequence_length'],
-            vector_dimension: int = defaults['vector_dimension'],
             embedding_dimension: int = defaults['embedding_dimension'],
             dropout: float = defaults['dropout'],
             depth: int = defaults['depth'],
@@ -55,17 +54,16 @@ class EncodedBeatsModel(object):
     ):
         self.auto_encoder = auto_encoder
         self.max_sequence_length = max_sequence_length
-        self.vector_dimension = vector_dimension
         self.embedding_dimension = embedding_dimension
         self.dropout = dropout
         self.depth = depth
         self.heads = heads
         self.learning_rate = learning_rate
-        self.padding_vector = np.repeat(-1, vector_dimension)
+        self.padding_vector = np.repeat(-1, auto_encoder.encoding_dim)
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
-    def train(self, x_train, epochs, batch_size=4, stop_loss=None, batches_per_epoch=1, report_per_x_batches=1,
+    def train(self, x_train, epochs, batch_size=12, stop_loss=None, batches_per_epoch=1, report_per_x_batches=1,
               gradient_accumulation_steps=1):
 
         train_vectors = self.auto_encoder.encode(x_train)
@@ -120,7 +118,7 @@ class EncodedBeatsModel(object):
     def generate(self, output_length=20, prompt=None):
         print(f"Generating a new song with {output_length} beats.")
         if prompt is None:
-            prompt = [self.padding_vector]
+            prompt = [self.auto_encoder.encode(self.padding_vector)]
 
         self.model.eval()
         initial = torch.tensor(prompt).float().to(utils.get_device())
@@ -135,8 +133,8 @@ class EncodedBeatsModel(object):
     def create_model(self):
         model = ContinuousAutoregressiveWrapper(ContinuousTransformerWrapper(
             max_seq_len=self.max_sequence_length,
-            dim_in=self.vector_dimension,
-            dim_out=self.vector_dimension,
+            dim_in=self.auto_encoder.encoding_dim,
+            dim_out=self.auto_encoder.encoding_dim,
             emb_dim=self.embedding_dimension,
             use_pos_emb=True,
             attn_layers=Decoder(

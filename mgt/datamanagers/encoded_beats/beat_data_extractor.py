@@ -1,9 +1,6 @@
-import random
+from pretty_midi import PrettyMIDI, np, pretty_midi
 
-import torch
-from pretty_midi import PrettyMIDI, pretty_midi, np
-from torch import nn
-from torch.nn import MSELoss
+from mgt.datamanagers.encoded_beats.encoded_beats_constants import POSSIBLE_MIDI_PITCHES
 
 
 def get_closest(number, target1, target2):
@@ -27,8 +24,6 @@ defaults = {
     },
     'beat_resolution': 4
 }
-
-POSSIBLE_MIDI_PITCHES = 128
 
 
 class BeatDataExtractor(object):
@@ -55,6 +50,60 @@ class BeatDataExtractor(object):
         print(f"Created a matrix with shape {beat_matrices.shape}")
         return np.array(beat_matrices)
 
+    def restore_midi(self, model_output) -> pretty_midi.PrettyMIDI:
+        reshaped = model_output.reshape((len(model_output), len(self.instruments), self.beat_resolution, POSSIBLE_MIDI_PITCHES))
+
+        notes = []
+
+        for beat_index, sub_beats in enumerate(reshaped):
+            for sub_beat_index, tracks in enumerate(sub_beats):
+                for track_index, pitches in enumerate(tracks):
+                    for pitch, note_type in enumerate(pitches):
+                        if note_type == 1:
+                            notes.append({'track': track_index, 'pitch': pitch,
+                                          'time': beat_index * 4 + sub_beat_index, 'type': 'on'})
+                        elif note_type == 2:
+                            notes.append({'track': track_index, 'pitch': pitch,
+                                          'time': beat_index * 4 + sub_beat_index, 'type': 'off'})
+
+        sorted_notes = sorted(notes, key=lambda x: (x['instrument'], x['time']))
+
+        midi = pretty_midi.PrettyMIDI()
+
+        for program in self.instruments:
+            instrument = pretty_midi.Instrument(program=program)
+            midi.instruments.append(instrument)
+
+        prev_note = None
+        current_midi_note = None
+        for note in sorted_notes:
+            instrument = midi.instruments[note['track']]
+            time = note['time']
+            if prev_note is not None \
+                    and note['track'] == prev_note['track'] \
+                    and note['pitch'] == prev_note['pitch'] \
+                    and time == prev_note['time'] + 1:
+                current_midi_note['end'] += 1
+            else:
+                if current_midi_note is not None:
+                    midi_note = pretty_midi.Note(
+                        velocity=64,
+                        pitch=current_midi_note['pitch'],
+                        start=current_midi_note['start'] * (0.5 / 4),
+                        end=current_midi_note['end'] * (0.5 / 4)
+                    )
+                    instrument.notes.append(midi_note)
+
+                current_midi_note = {
+                    'track': note['track'],
+                    'pitch': note['pitch'],
+                    'start': note['time'],
+                    'end': note['time'] + 1
+                }
+            prev_note = note
+
+        return midi
+
     def subdivide_beats(self, beats):
         subdivided = []
         prev_beat = 0
@@ -80,11 +129,9 @@ class BeatDataExtractor(object):
                     matrix[x][y].append(0)
 
         for index, instrument in enumerate(midi_data.instruments):
-            # program = instrument.program if not instrument.is_drum else 128
-            program = index  # TODO temporary until more instruments are added
             for note in instrument.notes:
                 activated_sub_beats = self.get_activated_sub_beats(note.start, note.end, subdivided_beats)
-                append_to_matrix(matrix, program, note.pitch, activated_sub_beats)
+                append_to_matrix(matrix, index, note.pitch, activated_sub_beats)
 
         return matrix
 

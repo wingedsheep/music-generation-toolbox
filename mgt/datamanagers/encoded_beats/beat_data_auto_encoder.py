@@ -8,7 +8,7 @@ from mgt.models import utils
 defaults = {
     'input_dim': 2048,
     'encoding_dim': 512,
-    'hidden_dims': [1024, 1024, 512, 512, 512],
+    'hidden_dims': [2048, 1024, 1024, 512, 512],
     'hidden_activation': nn.ReLU(),
     'encoder_output_activation': nn.ReLU()
 }
@@ -35,12 +35,12 @@ class BeatDataAutoEncoder(object):
         self.encoder_output_activation = encoder_output_activation
         self.model = self.create_model()
 
-    def train(self, training_data, nr_of_batches: int, batch_size: int = 256, learning_rate: float = 1e-4):
+    def train(self, training_data, epochs: int, batch_size: int = 256, learning_rate: float = 1e-4):
         self.model.train()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
         criterion = nn.MSELoss()
 
-        for epoch in range(nr_of_batches):
+        for epoch in range(epochs):
             optimizer.zero_grad()
 
             # Forward pass
