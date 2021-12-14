@@ -5,12 +5,12 @@ from mgt.datamanagers.encoded_beats.encoded_beats_dataset import EncodedBeatsDat
 from mgt.datamanagers.midi_wrapper import PrettyMidiWrapper
 
 defaults = {
-    'instruments': {
+    'instruments': [
         27,  # Electric guitar
         70,  # Bassoon
         33,  # Electric bass
         128  # Drums
-    },
+    ],
     'beat_resolution': 4
 }
 

@@ -1,3 +1,5 @@
+import random
+
 import torch
 from sequitur.models import LINEAR_AE
 import numpy as np
@@ -15,8 +17,17 @@ defaults = {
 
 
 def get_batch(data, batch_size):
-    indices = np.random.choice(len(data), size=batch_size)
-    return torch.tensor(data[indices]).float().to(utils.get_device())
+    indices = []
+    while len(indices) < batch_size:
+        song_index = random.randint(0, len(data) - 1)
+        sub_beat_index = random.randint(0, len(data[song_index]) - 1)
+        indices.append((song_index, sub_beat_index))
+
+    batch = []
+    for index in indices:
+        batch.append(data[index[0]][index[1]])
+
+    return torch.tensor(batch).float().to(utils.get_device())
 
 
 class BeatDataAutoEncoder(object):

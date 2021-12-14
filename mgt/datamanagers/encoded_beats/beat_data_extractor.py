@@ -16,12 +16,12 @@ def append_to_matrix(matrix, program, pitch, activated_sub_beats):
 
 
 defaults = {
-    'instruments': {
+    'instruments': [
         27,  # Electric guitar
         70,  # Bassoon
         33,  # Electric bass
         128  # Drums
-    },
+    ],
     'beat_resolution': 4
 }
 
@@ -123,7 +123,7 @@ class BeatDataExtractor(object):
         matrix = []
         for x in range(len(subdivided_beats) - 1):  # Sub beats
             matrix.append([])
-            for y in range(4):  # Instruments
+            for y in range(len(self.instruments)):  # Instruments
                 matrix[x].append([])
                 for z in range(128):  # Pitches
                     matrix[x][y].append(0)
