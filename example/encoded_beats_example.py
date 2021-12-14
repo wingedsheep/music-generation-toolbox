@@ -1,11 +1,9 @@
 import glob
 import os
 
-from mgt.datamanagers.compound_word_data_manager import CompoundWordDataManager
 from mgt.datamanagers.encoded_beats.beat_data_auto_encoder import BeatDataAutoEncoder
 from mgt.datamanagers.encoded_beats.encoded_beats_dataset import EncodedBeatsDataSet
 from mgt.datamanagers.encoded_beats_data_manager import EncodedBeatsDataManager
-from mgt.models.compound_word_transformer_model import CompoundWordTransformerModel
 from mgt.models.encoded_beats_model import EncodedBeatsModel
 
 """
