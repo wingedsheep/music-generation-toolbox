@@ -30,7 +30,7 @@ def pad_right(song_beat_vectors, max_sequence_length, padding_vector):
 def pad_left(song_beat_vectors, max_sequence_length, padding_vector):
     padded_song_beat_vectors = song_beat_vectors.copy()
     while len(padded_song_beat_vectors) < max_sequence_length:
-        padded_song_beat_vectors = np.append([padding_vector], padded_song_beat_vectors, 0)
+        padded_song_beat_vectors = np.insert(padded_song_beat_vectors, 0, [padding_vector], 0)
     return padded_song_beat_vectors
 
 
