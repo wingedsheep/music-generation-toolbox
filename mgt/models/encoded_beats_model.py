@@ -59,7 +59,7 @@ class EncodedBeatsModel(object):
         self.depth = depth
         self.heads = heads
         self.learning_rate = learning_rate
-        self.padding_vector = np.repeat(-1, auto_encoder.input_dim)
+        self.padding_vector = np.repeat(-1, auto_encoder.encoding_dim)
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
@@ -119,7 +119,7 @@ class EncodedBeatsModel(object):
     def generate(self, output_length=20, prompt=None):
         print(f"Generating a new song with {output_length} beats.")
         if prompt is None:
-            prompt = [self.auto_encoder.encode_sub_beat(self.padding_vector)]
+            prompt = [self.auto_encoder.encode_sub_beat(np.zeros(self.auto_encoder.input_dim))]
 
         self.model.eval()
         initial = torch.tensor(prompt).float().to(utils.get_device())
