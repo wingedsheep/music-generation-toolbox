@@ -59,7 +59,7 @@ class EncodedBeatsModel(object):
         self.depth = depth
         self.heads = heads
         self.learning_rate = learning_rate
-        self.padding_vector = np.repeat(-1, auto_encoder.encoding_dim)
+        self.padding_vector = np.repeat(-1, auto_encoder.input_dim)
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
