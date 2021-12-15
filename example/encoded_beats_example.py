@@ -33,8 +33,8 @@ model = EncodedBeatsModel(
 )
 
 # Train the auto encoder first and then the transformer model
-model.auto_encoder.train(dataset.data, epochs=10)
-model.train(dataset.data, epochs=512)
+model.auto_encoder.train(dataset.data, epochs=1000)
+model.train(dataset.data, epochs=500)
 
 # Generate a song
 output = model.generate(200)
