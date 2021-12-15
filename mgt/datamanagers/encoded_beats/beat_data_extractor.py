@@ -8,11 +8,8 @@ def get_closest(number, target1, target2):
 
 
 def append_to_matrix(matrix, program, pitch, activated_sub_beats):
-    for i in range(activated_sub_beats[0], activated_sub_beats[1] + 1):
-        if i == activated_sub_beats[1]:
-            matrix[i][program][pitch] = 2
-        else:
-            matrix[i][program][pitch] = 1
+    duration = activated_sub_beats[1] - activated_sub_beats[0]
+    matrix[activated_sub_beats[0]][program][pitch] = duration
 
 
 defaults = {
@@ -33,7 +30,7 @@ class BeatDataExtractor(object):
             tracks: [int] = defaults['tracks'],       # Which instrument should be used per midi track
             beat_resolution: int = defaults['beat_resolution']  # In how many pieces should the beats be divided
     ):
-        self.instruments = tracks
+        self.tracks = tracks
         self.beat_resolution = beat_resolution
 
     def extract_beats(self, midi_data: PrettyMIDI):
@@ -46,61 +43,46 @@ class BeatDataExtractor(object):
         for i in range(0, len(subdivided_beats) - self.beat_resolution, self.beat_resolution):
             beat_matrices.append(sub_beat_matrices[i: i + 4])
         beat_matrices = np.array(beat_matrices)
-        beat_matrices = beat_matrices.reshape((len(beat_matrices), len(self.instruments) * self.beat_resolution * POSSIBLE_MIDI_PITCHES))
+        beat_matrices = beat_matrices.reshape((len(beat_matrices), len(self.tracks) * self.beat_resolution * POSSIBLE_MIDI_PITCHES))
         print(f"Created a matrix with shape {beat_matrices.shape}")
         return np.array(beat_matrices)
 
     def restore_midi(self, model_output) -> pretty_midi.PrettyMIDI:
-        reshaped = model_output.reshape((len(model_output), len(self.instruments), self.beat_resolution, POSSIBLE_MIDI_PITCHES))
+        output = np.array(model_output)
+        reshaped = model_output.reshape((len(output), self.beat_resolution, len(self.tracks), POSSIBLE_MIDI_PITCHES))
 
         notes = []
 
         for beat_index, sub_beats in enumerate(reshaped):
             for sub_beat_index, tracks in enumerate(sub_beats):
                 for track_index, pitches in enumerate(tracks):
-                    for pitch, note_type in enumerate(pitches):
-                        if note_type == 1:
+                    for pitch, duration in enumerate(pitches):
+                        if duration > 0:
                             notes.append({'track': track_index, 'pitch': pitch,
-                                          'time': beat_index * 4 + sub_beat_index, 'type': 'on'})
-                        elif note_type == 2:
-                            notes.append({'track': track_index, 'pitch': pitch,
-                                          'time': beat_index * 4 + sub_beat_index, 'type': 'off'})
+                                          'time': beat_index * 4 + sub_beat_index, 'duration': duration})
 
-        sorted_notes = sorted(notes, key=lambda x: (x['instrument'], x['time']))
+        sorted_notes = sorted(notes, key=lambda x: (x['track'], x['time']))
 
         midi = pretty_midi.PrettyMIDI()
 
-        for program in self.instruments:
+        for program in self.tracks:
             instrument = pretty_midi.Instrument(program=program)
             midi.instruments.append(instrument)
 
-        prev_note = None
-        current_midi_note = None
+        sub_beat_duration = (0.5 / 4)  # TODO not hardcoded
         for note in sorted_notes:
             instrument = midi.instruments[note['track']]
             time = note['time']
-            if prev_note is not None \
-                    and note['track'] == prev_note['track'] \
-                    and note['pitch'] == prev_note['pitch'] \
-                    and time == prev_note['time'] + 1:
-                current_midi_note['end'] += 1
-            else:
-                if current_midi_note is not None:
-                    midi_note = pretty_midi.Note(
-                        velocity=64,
-                        pitch=current_midi_note['pitch'],
-                        start=current_midi_note['start'] * (0.5 / 4),
-                        end=current_midi_note['end'] * (0.5 / 4)
-                    )
-                    instrument.notes.append(midi_note)
+            pitch = note['pitch']
+            duration = note['duration']
 
-                current_midi_note = {
-                    'track': note['track'],
-                    'pitch': note['pitch'],
-                    'start': note['time'],
-                    'end': note['time'] + 1
-                }
-            prev_note = note
+            midi_note = pretty_midi.Note(
+                velocity=64,
+                pitch=pitch,
+                start=time * sub_beat_duration,
+                end=(time + duration) * sub_beat_duration
+            )
+            instrument.notes.append(midi_note)
 
         return midi
 
@@ -123,7 +105,7 @@ class BeatDataExtractor(object):
         matrix = []
         for x in range(len(subdivided_beats) - 1):  # Sub beats
             matrix.append([])
-            for y in range(len(self.instruments)):  # Instruments
+            for y in range(len(self.tracks)):  # Instruments
                 matrix[x].append([])
                 for z in range(128):  # Pitches
                     matrix[x][y].append(0)
@@ -136,12 +118,14 @@ class BeatDataExtractor(object):
         return matrix
 
     def get_activated_sub_beats(self, note_start, note_end, subdivided_beats):
+        # TODO replace with finding subbeats directly based on time
         sub_beat_start = self.find_nearest_matching_sub_beat(note_start, subdivided_beats)
-        sub_beat_end = self.find_nearest_matching_sub_beat(note_end, subdivided_beats) - 1
+        sub_beat_end = self.find_nearest_matching_sub_beat(note_end, subdivided_beats)
         return sub_beat_start, sub_beat_end
 
     def find_nearest_matching_sub_beat(self, time, subdivided_beats):
         prev_sub_beat = 0
+        index = 0
         for index, sub_beat in enumerate(subdivided_beats[1:]):
             if prev_sub_beat <= time <= sub_beat:
                 nearest_match = get_closest(time, prev_sub_beat, sub_beat)
