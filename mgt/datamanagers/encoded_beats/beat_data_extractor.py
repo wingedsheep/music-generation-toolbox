@@ -49,7 +49,7 @@ class BeatDataExtractor(object):
 
     def restore_midi(self, model_output) -> pretty_midi.PrettyMIDI:
         output = np.array(model_output)
-        reshaped = model_output.reshape((len(output), self.beat_resolution, len(self.tracks), POSSIBLE_MIDI_PITCHES))
+        reshaped = output.reshape((len(output), self.beat_resolution, len(self.tracks), POSSIBLE_MIDI_PITCHES))
 
         notes = []
 
