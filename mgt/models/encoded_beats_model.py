@@ -66,7 +66,8 @@ class EncodedBeatsModel(object):
     def train(self, x_train, epochs, batch_size=12, stop_loss=None, batches_per_epoch=1, report_per_x_batches=1,
               gradient_accumulation_steps=1):
 
-        train_vectors = self.auto_encoder.encode(x_train)
+        train_vectors = np.array([[self.auto_encoder.encode_sub_beat(y) for y in x] for x in x_train])
+        print(train_vectors.shape)
 
         self.model.train()
         start_time = time.time()
@@ -118,7 +119,7 @@ class EncodedBeatsModel(object):
     def generate(self, output_length=20, prompt=None):
         print(f"Generating a new song with {output_length} beats.")
         if prompt is None:
-            prompt = [self.auto_encoder.encode(self.padding_vector)]
+            prompt = [self.auto_encoder.encode_sub_beat(self.padding_vector)]
 
         self.model.eval()
         initial = torch.tensor(prompt).float().to(utils.get_device())
@@ -126,7 +127,7 @@ class EncodedBeatsModel(object):
         encoded_sample = self.model.generate(initial, output_length)
         encoded_sample = encoded_sample.cpu().detach().numpy()
 
-        decoded_sample = [self.auto_encoder.decode(x) for x in encoded_sample]
+        decoded_sample = [self.auto_encoder.decode_sub_beat(x) for x in encoded_sample]
 
         return decoded_sample
 

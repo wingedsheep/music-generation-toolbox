@@ -16,7 +16,7 @@ def append_to_matrix(matrix, program, pitch, activated_sub_beats):
 
 
 defaults = {
-    'instruments': [
+    'tracks': [
         27,  # Electric guitar
         70,  # Bassoon
         33,  # Electric bass
@@ -30,10 +30,10 @@ class BeatDataExtractor(object):
 
     def __init__(
             self,
-            instruments: [int] = defaults['instruments'],       # Which instrument should be used per midi track
+            tracks: [int] = defaults['tracks'],       # Which instrument should be used per midi track
             beat_resolution: int = defaults['beat_resolution']  # In how many pieces should the beats be divided
     ):
-        self.instruments = instruments
+        self.instruments = tracks
         self.beat_resolution = beat_resolution
 
     def extract_beats(self, midi_data: PrettyMIDI):
@@ -147,3 +147,4 @@ class BeatDataExtractor(object):
                 nearest_match = get_closest(time, prev_sub_beat, sub_beat)
                 return index if nearest_match == prev_sub_beat else index + 1
             prev_sub_beat = sub_beat
+        return index

@@ -6,12 +6,12 @@ class EncodedBeatsDataSet(object):
     def __init__(
             self,
             data,
-            instruments,
+            tracks,
             beat_resolution
     ):
         self.data = data
-        self.instruments = instruments
+        self.tracks = tracks
         self.beat_resolution = beat_resolution
 
     def get_encoded_beat_size(self):
-        return len(self.instruments) * self.beat_resolution * POSSIBLE_MIDI_PITCHES
+        return len(self.tracks) * self.beat_resolution * POSSIBLE_MIDI_PITCHES

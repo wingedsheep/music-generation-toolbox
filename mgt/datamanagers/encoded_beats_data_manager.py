@@ -5,7 +5,7 @@ from mgt.datamanagers.encoded_beats.encoded_beats_dataset import EncodedBeatsDat
 from mgt.datamanagers.midi_wrapper import PrettyMidiWrapper
 
 defaults = {
-    'instruments': [
+    'tracks': [
         27,  # Electric guitar
         70,  # Bassoon
         33,  # Electric bass
@@ -19,13 +19,13 @@ class EncodedBeatsDataManager(object):
 
     def __init__(
             self,
-            instruments=defaults['instruments'],
+            tracks=defaults['tracks'],
             beat_resolution=defaults['beat_resolution']
     ):
-        self.instruments = instruments
+        self.tracks = tracks
         self.beat_resolution = beat_resolution
         self.data_extractor = BeatDataExtractor(
-            instruments=instruments,
+            tracks=tracks,
             beat_resolution=beat_resolution
         )
 
@@ -33,16 +33,16 @@ class EncodedBeatsDataManager(object):
         training_data = []
         for path in midi_paths:
             print(f"Parsing {path}")
-            try:
-                midi_data = pretty_midi.PrettyMIDI(path)
-                data = self.data_extractor.extract_beats(midi_data)
-                training_data.append(data)
-            except Exception as e:
-                print(e)
+            # try:
+            midi_data = pretty_midi.PrettyMIDI(path)
+            data = self.data_extractor.extract_beats(midi_data)
+            training_data.append(data)
+            # except Exception as e:
+            #     print(e)
 
         return EncodedBeatsDataSet(
             data=training_data,
-            instruments=self.instruments,
+            tracks=self.tracks,
             beat_resolution=self.beat_resolution
         )
 

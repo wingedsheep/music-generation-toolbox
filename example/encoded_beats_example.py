@@ -16,7 +16,7 @@ midis = glob.glob(midi_path + '*.mid')
 
 # Create a data manager for tracks with three piano (midi program 0) instruments
 data_manager = EncodedBeatsDataManager(
-    instruments=[0, 0, 0]
+    tracks=[0, 0, 0]
 )
 
 # Prepare the dataset
@@ -33,7 +33,7 @@ model = EncodedBeatsModel(
 )
 
 # Train the auto encoder first and then the transformer model
-model.auto_encoder.train(dataset.data, epochs=1024)
+model.auto_encoder.train(dataset.data, epochs=10)
 model.train(dataset.data, epochs=512)
 
 # Generate a song

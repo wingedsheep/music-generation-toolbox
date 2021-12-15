@@ -1,8 +1,8 @@
 import random
 
 import torch
-from sequitur.models import LINEAR_AE
 import numpy as np
+from sequitur.models import LINEAR_AE
 from torch import nn
 
 from mgt.models import utils
@@ -26,6 +26,8 @@ def get_batch(data, batch_size):
     batch = []
     for index in indices:
         batch.append(data[index[0]][index[1]])
+
+    print(np.array(batch).shape)
 
     return torch.tensor(batch).float().to(utils.get_device())
 
@@ -67,11 +69,11 @@ class BeatDataAutoEncoder(object):
 
             print(f"Epoch {epoch}, loss {loss.item()}")
 
-    def encode(self, data):
+    def encode_sub_beat(self, data):
         tensor = torch.tensor(data).float().to(utils.get_device())
         return self.model.encoder.forward(tensor).cpu().detach().numpy()
 
-    def decode(self, encoded):
+    def decode_sub_beat(self, encoded):
         tensor = torch.tensor(encoded).float().to(utils.get_device())
         return [round(x) for x in self.model.decoder.forward(tensor).cpu().detach().numpy()]
 
