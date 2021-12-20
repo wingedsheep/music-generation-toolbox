@@ -8,8 +8,15 @@ def get_closest(number, target1, target2):
 
 
 def append_to_matrix(matrix, program, pitch, activated_sub_beats):
-    duration = activated_sub_beats[1] - activated_sub_beats[0]
-    matrix[activated_sub_beats[0]][program][pitch] = duration
+    """
+    1 is the start of a new note
+    2 is a continuation of a note
+    """
+    print(activated_sub_beats)
+    matrix[activated_sub_beats[0]][program][pitch] = 1
+    if activated_sub_beats[1] > activated_sub_beats[0]:
+        for sub_beat in range(activated_sub_beats[0] + 1, activated_sub_beats[1] + 1):
+            matrix[sub_beat][program][pitch] = 2
 
 
 defaults = {
@@ -27,7 +34,7 @@ class BeatDataExtractor(object):
 
     def __init__(
             self,
-            tracks: [int] = defaults['tracks'],       # Which instrument should be used per midi track
+            tracks: [int] = defaults['tracks'],  # Which instrument should be used per midi track
             beat_resolution: int = defaults['beat_resolution']  # In how many pieces should the beats be divided
     ):
         self.tracks = tracks
@@ -43,7 +50,8 @@ class BeatDataExtractor(object):
         for i in range(0, len(subdivided_beats) - self.beat_resolution, self.beat_resolution):
             beat_matrices.append(sub_beat_matrices[i: i + 4])
         beat_matrices = np.array(beat_matrices)
-        beat_matrices = beat_matrices.reshape((len(beat_matrices), len(self.tracks) * self.beat_resolution * POSSIBLE_MIDI_PITCHES))
+        beat_matrices = beat_matrices.reshape(
+            (len(beat_matrices), len(self.tracks) * self.beat_resolution * POSSIBLE_MIDI_PITCHES))
         print(f"Created a matrix with shape {beat_matrices.shape}")
         return np.array(beat_matrices)
 
@@ -56,12 +64,12 @@ class BeatDataExtractor(object):
         for beat_index, sub_beats in enumerate(reshaped):
             for sub_beat_index, tracks in enumerate(sub_beats):
                 for track_index, pitches in enumerate(tracks):
-                    for pitch, duration in enumerate(pitches):
-                        if duration > 0:
+                    for pitch, activation_type in enumerate(pitches):
+                        if activation_type > 0:
                             notes.append({'track': track_index, 'pitch': pitch,
-                                          'time': beat_index * 4 + sub_beat_index, 'duration': duration})
+                                          'time': beat_index * 4 + sub_beat_index, 'activation_type': activation_type})
 
-        sorted_notes = sorted(notes, key=lambda x: (x['track'], x['time']))
+        sorted_notes = sorted(notes, key=lambda x: (x['track'], x['pitch'], x['time']))
 
         midi = pretty_midi.PrettyMIDI()
 
@@ -70,19 +78,45 @@ class BeatDataExtractor(object):
             midi.instruments.append(instrument)
 
         sub_beat_duration = (0.5 / 4)  # TODO not hardcoded
+        current_note = None
         for note in sorted_notes:
             instrument = midi.instruments[note['track']]
             time = note['time']
             pitch = note['pitch']
-            duration = note['duration']
+            activation_type = note['activation_type']
 
+            if current_note is not None and \
+                    activation_type != 1 and \
+                    current_note['instrument'] == instrument and \
+                    current_note['start'] + current_note['duration'] == time and \
+                    current_note['pitch'] == pitch:
+                print('increase duration')
+                current_note['duration'] = current_note['duration'] +1
+            else:
+                if current_note is not None:
+                    print(current_note)
+                    midi_note = pretty_midi.Note(
+                        velocity=64,
+                        pitch=current_note['pitch'],
+                        start=current_note['start'] * sub_beat_duration,
+                        end=(current_note['start'] + current_note['duration']) * sub_beat_duration
+                    )
+                    current_note['instrument'].notes.append(midi_note)
+                current_note = {
+                    'instrument': instrument,
+                    'start': time,
+                    'duration': 1,
+                    'pitch': pitch
+                }
+
+        if current_note is not None:
             midi_note = pretty_midi.Note(
                 velocity=64,
-                pitch=pitch,
-                start=time * sub_beat_duration,
-                end=(time + duration) * sub_beat_duration
+                pitch=current_note['pitch'],
+                start=current_note['start'] * sub_beat_duration,
+                end=(current_note['start'] + current_note['duration']) * sub_beat_duration
             )
-            instrument.notes.append(midi_note)
+            current_note['instrument'].notes.append(midi_note)
 
         return midi
 
