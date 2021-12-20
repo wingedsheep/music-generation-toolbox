@@ -90,11 +90,9 @@ class BeatDataExtractor(object):
                     current_note['instrument'] == instrument and \
                     current_note['start'] + current_note['duration'] == time and \
                     current_note['pitch'] == pitch:
-                print('increase duration')
                 current_note['duration'] = current_note['duration'] +1
             else:
                 if current_note is not None:
-                    print(current_note)
                     midi_note = pretty_midi.Note(
                         velocity=64,
                         pitch=current_note['pitch'],
