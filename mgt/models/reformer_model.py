@@ -50,7 +50,15 @@ class ReformerModel(object):
         self.learning_rate = learning_rate
         self.optimizer = self.create_optimizer()
 
-    def train(self, x_train, epochs, batch_size=3, stop_loss=None, batches_per_epoch=100, report_per_x_batches=5):
+    def train(self,
+              x_train,
+              epochs,
+              batch_size=3,
+              stop_loss=None,
+              batches_per_epoch=100,
+              report_per_x_batches=5,
+              gradient_accumulation_steps=1):
+
         self.model.train()
         start_time = time.time()
         for epoch in range(epochs):
@@ -60,16 +68,16 @@ class ReformerModel(object):
             batch_losses = []
             nr_of_batches_processed = 0
             for _ in range(batches_per_epoch):
-                batch = utils.get_batch(
-                    x_train,
-                    batch_size=batch_size,
-                    max_sequence_length=self.max_sequence_length)
+                for _ in range(gradient_accumulation_steps):
+                    batch = utils.get_batch(
+                        x_train,
+                        batch_size=batch_size,
+                        max_sequence_length=self.max_sequence_length)
 
-                # when training, set return_loss equal to True
-                torch_batch = [torch.tensor(x).long().to(utils.get_device()) for x in batch]
+                    torch_batch = torch.tensor(batch).long().to(utils.get_device())
 
-                loss = self.model(torch_batch, return_loss=True)
-                loss.backward()
+                    loss = self.model(torch_batch, return_loss=True, randomly_truncate_sequence=True)
+                    loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
                 self.optimizer.step()
