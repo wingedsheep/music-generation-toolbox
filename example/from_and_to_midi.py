@@ -19,5 +19,6 @@ timeshift_midi.save("timeshift.midi")
 # Parse midi using remi method
 remi_data_manager = RemiDataManager()
 remi_dataset = remi_data_manager.prepare_data([midi_path])
+print(len(remi_dataset.data[0]))
 remi_midi = remi_data_manager.to_midi(remi_dataset.data[0])
 remi_midi.save("remi.midi")

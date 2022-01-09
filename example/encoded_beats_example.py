@@ -6,6 +6,8 @@ from mgt.datamanagers.encoded_beats.encoded_beats_dataset import EncodedBeatsDat
 from mgt.datamanagers.encoded_beats_data_manager import EncodedBeatsDataManager
 from mgt.models.encoded_beats_model import EncodedBeatsModel
 
+import numpy as np
+
 """
 Example showing how to train an encoded beats model and generate music with it
 """
@@ -20,25 +22,28 @@ data_manager = EncodedBeatsDataManager(
 )
 
 # Prepare the dataset
-dataset: EncodedBeatsDataSet = data_manager.prepare_data(midis)
+dataset: EncodedBeatsDataSet = data_manager.prepare_data([midis[0]])
+
+print(np.array(dataset.data[0][0:16]).shape)
+
 
 # Create the auto encoder
-auto_encoder = BeatDataAutoEncoder(
-    input_dim=dataset.get_encoded_beat_size()
-)
-
-# Create the transformer model
-model = EncodedBeatsModel(
-    auto_encoder=auto_encoder
-)
+# auto_encoder = BeatDataAutoEncoder(
+#     input_dim=dataset.get_encoded_beat_size()
+# )
+#
+# # Create the transformer model
+# model = EncodedBeatsModel(
+#     auto_encoder=auto_encoder
+# )
 
 # Train the auto encoder first and then the transformer model
-model.auto_encoder.train(dataset.data, epochs=1000)
-model.train(dataset.data, epochs=500)
+# model.auto_encoder.train(dataset.data, epochs=1000)
+# model.train(dataset.data, epochs=500)
 
 # Generate a song
-output = model.generate(200)
+# output = model.generate(200)
 
 # Save the resulting midi
-midi = data_manager.to_midi(output)
-midi.save("result.midi")
+# midi = data_manager.to_midi(dataset.data[0])
+# midi.save("result.midi")
