@@ -7,35 +7,25 @@ def get_closest(number, target1, target2):
     return target2 if abs(target1 - number) > abs(target2 - number) else target1
 
 
-def append_to_matrix(matrix, program, pitch, activated_sub_beats):
-    """
-    1 is the start of a new note
-    """
-    matrix[activated_sub_beats[0]][program][pitch] = 1
-    if activated_sub_beats[1] > activated_sub_beats[0]:
-        for sub_beat in range(activated_sub_beats[0] + 1, activated_sub_beats[1] + 1):
-            matrix[sub_beat][program][pitch] = 1
-
-
 defaults = {
-    'tracks': [
-        27,  # Electric guitar
-        70,  # Bassoon
-        33,  # Electric bass
-        128  # Drums
-    ],
     'beat_resolution': 4
 }
 
 
-class BeatDataExtractor(object):
+def append_to_matrix(matrix, program, pitch, activated_sub_beats):
+    while activated_sub_beats[1] >= len(matrix):
+        matrix.append([])
+
+    for beat in activated_sub_beats:
+        matrix[beat].append((program, pitch))
+
+
+class BeatDataExtractor2(object):
 
     def __init__(
             self,
-            tracks: [int] = defaults['tracks'],  # Which instrument should be used per midi track
             beat_resolution: int = defaults['beat_resolution']  # In how many pieces should the beats be divided
     ):
-        self.tracks = tracks
         self.beat_resolution = beat_resolution
 
     def extract_beats(self, midi_data: PrettyMIDI):
@@ -47,11 +37,24 @@ class BeatDataExtractor(object):
         beat_matrices = []
         for i in range(0, len(subdivided_beats) - self.beat_resolution, self.beat_resolution):
             beat_matrices.append(sub_beat_matrices[i: i + 4])
-        beat_matrices = np.array(beat_matrices)
-        beat_matrices = beat_matrices.reshape(
-            (len(beat_matrices), 128 * self.beat_resolution * POSSIBLE_MIDI_PITCHES))
-        print(f"Created a matrix with shape {beat_matrices.shape}")
-        return np.array(beat_matrices)
+        return beat_matrices
+
+    def create_matrix_representation(self, notes_and_pitches):
+        matrix = []
+        for i in range(self.beat_resolution):
+            matrix.append([])
+            for j in range(128):  # Instruments
+                matrix[i].append([])
+                for k in range(128):  # Pitches
+                    matrix[i][j].append(0)
+
+        for sub_beat, notes in enumerate(notes_and_pitches):
+            for note in notes:
+                instrument = note[0]
+                pitch = note[1]
+                matrix[sub_beat][instrument - 2][pitch - 2] = 1
+
+        return matrix
 
     def restore_midi(self, model_output) -> pretty_midi.PrettyMIDI:
         output = np.array(model_output)
@@ -133,17 +136,12 @@ class BeatDataExtractor(object):
 
     def get_sub_beat_matrices(self, subdivided_beats, midi_data):
         matrix = []
-        for x in range(len(subdivided_beats) - 1):  # Sub beats
-            matrix.append([])
-            for y in range(128):  # Instruments
-                matrix[x].append([])
-                for z in range(128):  # Pitches
-                    matrix[x][y].append(0)
 
         for index, instrument in enumerate(midi_data.instruments):
             for note in instrument.notes:
+                program = 129 if instrument.is_drum else instrument.program
                 activated_sub_beats = self.get_activated_sub_beats(note.start, note.end, subdivided_beats)
-                append_to_matrix(matrix, index, note.pitch, activated_sub_beats)
+                append_to_matrix(matrix, program, note.pitch, activated_sub_beats)
 
         return matrix
 
