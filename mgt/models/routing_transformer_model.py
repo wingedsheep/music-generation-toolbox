@@ -5,6 +5,7 @@ import time
 
 import torch
 import numpy as np
+from apex import amp
 
 from mgt.datamanagers.data_manager import Dictionary
 from routing_transformer import RoutingTransformerLM, AutoregressiveWrapper
@@ -19,7 +20,9 @@ defaults = {
     'depth': 12,
     'heads': 6,
     'window_size': 128,
-    'reversible': True
+    'reversible': True,
+    'ff_chunks': 1,                     # number of chunks for feedforward layer, make higher if there are memory issues
+    'optimize': False                   # Casts the weights to FP16
 }
 
 
@@ -34,7 +37,9 @@ class RoutingTransformerModel(object):
                  depth=defaults['depth'],
                  heads=defaults['heads'],
                  window_size=defaults['window_size'],
-                 reversible=defaults['reversible']
+                 reversible=defaults['reversible'],
+                 ff_chunks=defaults['ff_chunks'],
+                 optimize=defaults['optimize']
                  ):
         self.dictionary = dictionary
         self.learning_rate = learning_rate
@@ -45,6 +50,8 @@ class RoutingTransformerModel(object):
         self.heads = heads
         self.window_size = window_size
         self.reversible = reversible
+        self.ff_chunks = ff_chunks
+        self.optimize = optimize
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
@@ -128,13 +135,17 @@ class RoutingTransformerModel(object):
             attn_dropout=self.dropout,
             ff_dropout=self.dropout,
             causal=True,
-            reversible=self.reversible
+            reversible=self.reversible,
+            ff_chunks=self.ff_chunks
         )
 
         model = AutoregressiveWrapper(model,
                                       ignore_index=0,
                                       pad_value=0
                                       ).to(utils.get_device())
+
+        if self.optimize:
+            model = amp.initialize(model, opt_level='O2')
 
         return model
 
@@ -153,6 +164,8 @@ class RoutingTransformerModel(object):
             'window_size': self.window_size,
             'heads': self.heads,
             'reversible': self.reversible,
+            'ff_chunks': self.ff_chunks,
+            'optimize': self.optimize,
             'model_state_dict': self.model.state_dict()
         }, path)
 
@@ -169,7 +182,9 @@ class RoutingTransformerModel(object):
             depth=utils.get_or_default(checkpoint, 'depth', defaults),
             window_size=utils.get_or_default(checkpoint, 'window_size', defaults),
             heads=utils.get_or_default(checkpoint, 'heads', defaults),
-            reversible=utils.get_or_default(checkpoint, 'reversible', defaults)
+            reversible=utils.get_or_default(checkpoint, 'reversible', defaults),
+            ff_chunks=utils.get_or_default(checkpoint, 'ff_chunks', defaults),
+            optimize=utils.get_or_default(checkpoint, 'optimize', defaults)
         )
 
         model.model.load_state_dict(checkpoint['model_state_dict'], strict=False)
