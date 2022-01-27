@@ -137,20 +137,23 @@ class RoutingTransformerModel(object):
             causal=True,
             reversible=self.reversible,
             ff_chunks=self.ff_chunks
-        ).to(utils.get_device())
-
-        if self.optimize:
-            model = amp.initialize(model, opt_level='O1')
+        )
 
         model = AutoregressiveWrapper(model,
                                       ignore_index=0,
                                       pad_value=0
                                       ).to(utils.get_device())
 
+        if self.optimize:
+            model = amp.initialize(model, opt_level='O2')
+
         return model
 
     def create_optimizer(self):
-        return torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        if self.optimize:
+            return torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, eps=1e-5)
+        else:
+            return torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
     def save_checkpoint(self, path):
         print(f'Saving checkpoint {path}')
