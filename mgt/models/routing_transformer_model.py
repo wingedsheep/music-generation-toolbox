@@ -139,13 +139,13 @@ class RoutingTransformerModel(object):
             ff_chunks=self.ff_chunks
         )
 
+        if self.optimize:
+            model = amp.initialize(model, opt_level='O2')
+
         model = AutoregressiveWrapper(model,
                                       ignore_index=0,
                                       pad_value=0
                                       ).to(utils.get_device())
-
-        if self.optimize:
-            model = amp.initialize(model, opt_level='O2')
 
         return model
 
