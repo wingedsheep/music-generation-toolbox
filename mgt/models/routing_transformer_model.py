@@ -137,7 +137,7 @@ class RoutingTransformerModel(object):
             causal=True,
             reversible=self.reversible,
             ff_chunks=self.ff_chunks
-        )
+        ).to(utils.get_device())
 
         if self.optimize:
             model = amp.initialize(model, opt_level='O2')
