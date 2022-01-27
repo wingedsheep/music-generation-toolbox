@@ -140,7 +140,7 @@ class RoutingTransformerModel(object):
         ).to(utils.get_device())
 
         if self.optimize:
-            model = amp.initialize(model, opt_level='O2')
+            model = amp.initialize(model, opt_level='O1')
 
         model = AutoregressiveWrapper(model,
                                       ignore_index=0,
