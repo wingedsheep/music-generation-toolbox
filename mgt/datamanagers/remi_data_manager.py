@@ -25,6 +25,7 @@ class RemiDataManager(DataManager):
                 track 0 to a grand piano, and track 1 to an acoustic guitar.
     instrument_mapping: Maps instruments to different instruments. For example {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0}
                 maps all piano-like instruments to a grand piano. Mapping to None removes the instrument entirely.
+    efficient_remi: Does not repeat instrument and position for every note if they are the same as the previous.
     """
 
     def __init__(
@@ -60,6 +61,7 @@ class RemiDataManager(DataManager):
                         events = self.data_extractor.extract_events(path, transposition_step)
                         words = self.efficient_remi_converter.convert_to_efficient_remi(events)
                         data = self.data_extractor.words_to_data(words)
+                        print(f"Parsed {len(data)} words from midi as efficient REMI.")
                         training_data.append(data)
                     else:
                         data = self.data_extractor.extract_data(path, transposition_step)
