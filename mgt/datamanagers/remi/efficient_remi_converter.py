@@ -84,8 +84,8 @@ class EfficientRemiConverter(object):
 
     def convert_to_normal_remi(self, efficient_remi_words):
         result = []
-        last_instrument = None
-        last_position = None
+        last_instrument = "0"
+        last_position = "1/16"
 
         for index, word in enumerate(efficient_remi_words):
             word = efficient_remi_words[index]
