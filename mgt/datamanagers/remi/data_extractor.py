@@ -26,12 +26,17 @@ class DataExtractor(object):
     def extract_data(self, path: str, transposition_steps: int):
         print(f"Extracting data for {path}")
         words = self.extract_words(path, transposition_steps)
-        data = list(map(lambda x: self.dictionary.word_to_data(x), words))
-        return data
+        return self.words_to_data(words)
+
+    def words_to_data(self, words):
+        return list(map(lambda x: self.dictionary.word_to_data(x), words))
+
+    def events_to_words(self, events):
+        return list(map(lambda x: '{}_{}'.format(x.name, x.value), events))
 
     def extract_words(self, path: str, transposition_steps: int):
         events = self.extract_events(path, transposition_steps)
-        return list(map(lambda x: '{}_{}'.format(x.name, x.value), events))
+        return self.events_to_words(events)
 
     def extract_events(self, input_path: str, transposition_steps: int):
         if transposition_steps != 0:
