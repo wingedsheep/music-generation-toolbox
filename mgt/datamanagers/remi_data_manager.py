@@ -2,6 +2,7 @@ from mgt.datamanagers.data_manager import DataManager, DataSet
 from mgt.datamanagers.midi_wrapper import MidiWrapper, MidiToolkitWrapper
 from mgt.datamanagers.remi.data_extractor import DataExtractor
 from mgt.datamanagers.remi.dictionary_generator import DictionaryGenerator
+from mgt.datamanagers.remi.efficient_remi_config import EfficientRemiConfig
 from mgt.datamanagers.remi.efficient_remi_converter import EfficientRemiConverter
 from mgt.datamanagers.remi.to_midi_mapper import ToMidiMapper
 
@@ -11,7 +12,7 @@ defaults = {
     'transposition_steps': [0],
     'map_tracks_to_instruments': {},
     'instrument_mapping': {},
-    'efficient_remi': True
+    'efficient_remi_config': EfficientRemiConfig()
 }
 
 
@@ -34,7 +35,7 @@ class RemiDataManager(DataManager):
             transposition_steps=defaults['transposition_steps'],
             map_tracks_to_instruments=defaults['map_tracks_to_instruments'],
             instrument_mapping=defaults['instrument_mapping'],
-            efficient_remi=defaults['efficient_remi']
+            efficient_remi_config=defaults['efficient_remi_config']
     ):
         self.use_chords = use_chords
         self.transposition_steps = transposition_steps
@@ -47,9 +48,9 @@ class RemiDataManager(DataManager):
             use_chords=self.use_chords,
             instrument_mapping=self.instrument_mapping
         )
-        self.efficient_remi = efficient_remi
-        if self.efficient_remi:
-            self.efficient_remi_converter = EfficientRemiConverter()
+        self.efficient_remi_config = efficient_remi_config
+        if self.efficient_remi_config.enabled:
+            self.efficient_remi_converter = EfficientRemiConverter(efficient_remi_config)
         self.to_midi_mapper = ToMidiMapper(self.dictionary)
 
     def prepare_data(self, midi_paths) -> DataSet:
@@ -57,7 +58,7 @@ class RemiDataManager(DataManager):
         for path in midi_paths:
             for transposition_step in self.transposition_steps:
                 try:
-                    if self.efficient_remi:
+                    if self.efficient_remi_config.enabled:
                         events = self.data_extractor.extract_events(path, transposition_step)
                         words = self.efficient_remi_converter.convert_to_efficient_remi(events)
                         data = self.data_extractor.words_to_data(words)
@@ -72,7 +73,7 @@ class RemiDataManager(DataManager):
         return DataSet(training_data, self.dictionary)
 
     def to_midi(self, data) -> MidiWrapper:
-        if self.efficient_remi:
+        if self.efficient_remi_config.enabled:
             efficient_words = list(map(lambda x: self.dictionary.data_to_word(x), data))
             words = self.efficient_remi_converter.convert_to_normal_remi(efficient_words)
             data = self.data_extractor.words_to_data(words)

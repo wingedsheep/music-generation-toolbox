@@ -1,6 +1,7 @@
 from enum import IntEnum
 
 from mgt.datamanagers.remi.event import Event
+from mgt.datamanagers.remi_data_manager import EfficientRemiConfig
 
 
 class RemiEventType(IntEnum):
@@ -30,8 +31,8 @@ class RemiItem(object):
 
 class EfficientRemiConverter(object):
 
-    def __init__(self):
-        pass
+    def __init__(self, config: EfficientRemiConfig):
+        self.config = config
 
     def convert_to_remi_items(self, events):
         items = []
@@ -96,11 +97,19 @@ class EfficientRemiConverter(object):
             if word.startswith('Position'):
                 last_position = word.split("_")[1]
 
-            if word.startswith('Note Velocity'):
-                if not result[-1].startswith('Instrument'):
-                    result.append(f'Instrument_{last_instrument}')
-                if not result[-2].startswith('Position'):
-                    result.insert(-1, f'Position_{last_position}')
+            if self.config.remove_velocity:
+                if word.startswith('Note On'):
+                    if not result[-1].startswith('Instrument'):
+                        result.append(f'Instrument_{last_instrument}')
+                    if not result[-2].startswith('Position'):
+                        result.insert(-1, f'Position_{last_position}')
+                    result.append("Note Velocity_30")  # Default velocity of 30
+            else:
+                if word.startswith('Note Velocity'):
+                    if not result[-1].startswith('Instrument'):
+                        result.append(f'Instrument_{last_instrument}')
+                    if not result[-2].startswith('Position'):
+                        result.insert(-1, f'Position_{last_position}')
 
             result.append(word)
 
@@ -138,6 +147,10 @@ class EfficientRemiConverter(object):
                     events.append(item.original_events[0])
                 if write_instrument:
                     events.append(item.original_events[1])
-                events.extend(item.original_events[2:])
+
+                if self.config.remove_velocity:
+                    events.extend(item.original_events[3:])  # Velocity is on index 2
+                else:
+                    events.extend(item.original_events[2:])
 
         return events
