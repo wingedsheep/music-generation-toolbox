@@ -100,7 +100,7 @@ class EfficientRemiConverter(object):
                 if not result[-1].startswith('Instrument'):
                     result.append(f'Instrument_{last_instrument}')
                 if not result[-2].startswith('Position'):
-                    result.insert(-2, f'Position_{last_position}')
+                    result.insert(-1, f'Position_{last_position}')
 
             result.append(word)
 
