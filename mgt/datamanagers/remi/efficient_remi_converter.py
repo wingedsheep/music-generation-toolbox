@@ -99,16 +99,16 @@ class EfficientRemiConverter(object):
 
             if self.config.remove_velocity:
                 if word.startswith('Note On'):
-                    if not result[-1].startswith('Instrument'):
+                    if index < 1 or not result[-1].startswith('Instrument'):
                         result.append(f'Instrument_{last_instrument}')
-                    if not result[-2].startswith('Position'):
+                    if index < 2 or not result[-2].startswith('Position'):
                         result.insert(-1, f'Position_{last_position}')
                     result.append("Note Velocity_30")  # Default velocity of 30
             else:
                 if word.startswith('Note Velocity'):
-                    if not result[-1].startswith('Instrument'):
+                    if index < 1 or not result[-1].startswith('Instrument'):
                         result.append(f'Instrument_{last_instrument}')
-                    if not result[-2].startswith('Position'):
+                    if index < 2 or not result[-2].startswith('Position'):
                         result.insert(-1, f'Position_{last_position}')
 
             result.append(word)
