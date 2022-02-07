@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## 0.5.0 - 2022-02-05
+
+### Added
+- Efficient REMI encoding to reduce the number of characters
+
 ## 0.4.1 - 2021-12-12
 
 ### Fixed
