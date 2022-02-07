@@ -5,7 +5,6 @@ import time
 
 import torch
 import numpy as np
-from apex import amp
 
 from mgt.datamanagers.data_manager import Dictionary
 from routing_transformer import RoutingTransformerLM, AutoregressiveWrapper
