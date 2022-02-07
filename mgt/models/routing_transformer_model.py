@@ -144,10 +144,7 @@ class RoutingTransformerModel(object):
         return model
 
     def create_optimizer(self):
-        if self.optimize:
-            return torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, eps=1e-5)
-        else:
-            return torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        return torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
     def save_checkpoint(self, path):
         print(f'Saving checkpoint {path}')
@@ -162,7 +159,6 @@ class RoutingTransformerModel(object):
             'heads': self.heads,
             'reversible': self.reversible,
             'ff_chunks': self.ff_chunks,
-            'optimize': self.optimize,
             'model_state_dict': self.model.state_dict()
         }, path)
 
