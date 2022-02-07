@@ -21,8 +21,7 @@ defaults = {
     'heads': 6,
     'window_size': 128,
     'reversible': True,
-    'ff_chunks': 1,                     # number of chunks for feedforward layer, make higher if there are memory issues
-    'optimize': False                   # Casts the weights to FP16
+    'ff_chunks': 1                     # number of chunks for feedforward layer, make higher if there are memory issues
 }
 
 
@@ -38,8 +37,7 @@ class RoutingTransformerModel(object):
                  heads=defaults['heads'],
                  window_size=defaults['window_size'],
                  reversible=defaults['reversible'],
-                 ff_chunks=defaults['ff_chunks'],
-                 optimize=defaults['optimize']
+                 ff_chunks=defaults['ff_chunks']
                  ):
         self.dictionary = dictionary
         self.learning_rate = learning_rate
@@ -51,7 +49,6 @@ class RoutingTransformerModel(object):
         self.window_size = window_size
         self.reversible = reversible
         self.ff_chunks = ff_chunks
-        self.optimize = optimize
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
@@ -144,9 +141,6 @@ class RoutingTransformerModel(object):
                                       pad_value=0
                                       ).to(utils.get_device())
 
-        if self.optimize:
-            model = amp.initialize(model, opt_level='O2')
-
         return model
 
     def create_optimizer(self):
@@ -186,8 +180,7 @@ class RoutingTransformerModel(object):
             window_size=utils.get_or_default(checkpoint, 'window_size', defaults),
             heads=utils.get_or_default(checkpoint, 'heads', defaults),
             reversible=utils.get_or_default(checkpoint, 'reversible', defaults),
-            ff_chunks=utils.get_or_default(checkpoint, 'ff_chunks', defaults),
-            optimize=utils.get_or_default(checkpoint, 'optimize', defaults)
+            ff_chunks=utils.get_or_default(checkpoint, 'ff_chunks', defaults)
         )
 
         model.model.load_state_dict(checkpoint['model_state_dict'], strict=False)
