@@ -19,7 +19,9 @@ defaults = {
     'depth': 12,
     'heads': 6,
     'window_size': 128,
-    'reversible': True
+    'reversible': True,
+    'ff_chunks': 1,                     # number of chunks for feedforward layer, make higher if there are memory issues
+    'moe_num_experts': 4                # number of experts in the mixture of experts layer, defaults to 4. increase for adding more parameters to model
 }
 
 
@@ -34,7 +36,9 @@ class RoutingTransformerModel(object):
                  depth=defaults['depth'],
                  heads=defaults['heads'],
                  window_size=defaults['window_size'],
-                 reversible=defaults['reversible']
+                 reversible=defaults['reversible'],
+                 ff_chunks=defaults['ff_chunks'],
+                 moe_num_experts=defaults['moe_num_experts']
                  ):
         self.dictionary = dictionary
         self.learning_rate = learning_rate
@@ -45,6 +49,8 @@ class RoutingTransformerModel(object):
         self.heads = heads
         self.window_size = window_size
         self.reversible = reversible
+        self.ff_chunks = ff_chunks
+        self.moe_num_experts = moe_num_experts
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
@@ -83,6 +89,7 @@ class RoutingTransformerModel(object):
                     loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
+
                 self.optimizer.step()
                 self.optimizer.zero_grad()
 
@@ -128,7 +135,9 @@ class RoutingTransformerModel(object):
             attn_dropout=self.dropout,
             ff_dropout=self.dropout,
             causal=True,
-            reversible=self.reversible
+            reversible=self.reversible,
+            ff_chunks=self.ff_chunks,
+            moe_num_experts=self.moe_num_experts
         )
 
         model = AutoregressiveWrapper(model,
@@ -153,6 +162,8 @@ class RoutingTransformerModel(object):
             'window_size': self.window_size,
             'heads': self.heads,
             'reversible': self.reversible,
+            'ff_chunks': self.ff_chunks,
+            'moe_num_experts': self.moe_num_experts,
             'model_state_dict': self.model.state_dict()
         }, path)
 
@@ -169,7 +180,9 @@ class RoutingTransformerModel(object):
             depth=utils.get_or_default(checkpoint, 'depth', defaults),
             window_size=utils.get_or_default(checkpoint, 'window_size', defaults),
             heads=utils.get_or_default(checkpoint, 'heads', defaults),
-            reversible=utils.get_or_default(checkpoint, 'reversible', defaults)
+            reversible=utils.get_or_default(checkpoint, 'reversible', defaults),
+            ff_chunks=utils.get_or_default(checkpoint, 'ff_chunks', defaults),
+            moe_num_experts=utils.get_or_default(checkpoint, 'moe_num_experts', defaults),
         )
 
         model.model.load_state_dict(checkpoint['model_state_dict'], strict=False)
