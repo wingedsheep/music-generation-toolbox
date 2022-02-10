@@ -64,6 +64,7 @@ class RoutingTransformerModel(object):
               report_per_x_batches=20,
               gradient_accumulation_steps=1):
 
+        scaler = torch.cuda.amp.GradScaler()
         self.model.train()
 
         start_time = time.time()
@@ -82,11 +83,17 @@ class RoutingTransformerModel(object):
 
                     torch_batch = torch.tensor(batch).long().to(utils.get_device())
 
-                    loss = self.model(torch_batch, return_loss=True, randomly_truncate_sequence=True)
-                    loss.backward()
+                    with torch.cuda.amp.autocast():
+                        loss = self.model(torch_batch, return_loss=True, randomly_truncate_sequence=True)
+
+                    scaler.scale(loss).backward()
 
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
-                self.optimizer.step()
+
+                scaler.step(self.optimizer)
+
+                scaler.update()
+
                 self.optimizer.zero_grad()
 
                 nr_of_batches_processed += 1
