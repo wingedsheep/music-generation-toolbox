@@ -46,6 +46,24 @@ midi = datamanager.to_midi(output)
 midi.save("result.midi")
 ```
 
+Saving and loading a model can be done as follows.
+All models have the `save_checkpoint` and `load_checkpoint` functionality.
+
+```python
+from mgt.datamanagers.remi_data_manager import RemiDataManager
+from mgt.models.transformer_model import TransformerModel
+
+datamanager = RemiDataManager()
+
+model = TransformerModel(
+    dictionary=datamanager.dictionary,
+    max_sequence_length=512
+)
+
+model.save_checkpoint('saved_model')
+model2 = TransformerModel.load_checkpoint('saved_model')
+```
+
 ### Routing Transformer
 
 The Routing Transformer (https://arxiv.org/abs/2003.05997) is an efficient transformer model that can be used to increase the size of the attention window.
@@ -93,6 +111,8 @@ Groups of tokens that are always used together are combined into compound words.
 So these 5 words are combined into a single compound word, that is mapped to a single embedding. This means that effectively every note can now be expressed just with 1 token, instead of 5, giving the advantage of a larger attention window.
 
 Under the hood the CompoundWordTransformerModel uses a standard transformer.
+
+Note that the `CompoundWordTransformer` can only be used with a dataset prepared by the `CompoundWordDataManager`.
 
 ```python
 from mgt.datamanagers.compound_word_data_manager import CompoundWordDataManager
