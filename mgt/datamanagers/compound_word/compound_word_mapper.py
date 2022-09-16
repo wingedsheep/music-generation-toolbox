@@ -101,7 +101,7 @@ class CompoundWordMapper(object):
         self.note_name_size = len(note_name_keys)
         self.note_name_offset = min(note_name_keys)
 
-        octave_keys = {k: v for k, v in dictionary.dtw.items() if 'Octave' in v}.keys()
+        octave_keys = {k: v for k, v in dictionary.dtw.items() if 'Note Octave' in v}.keys()
         self.octave_size = len(octave_keys)
         self.octave_offset = min(octave_keys)
 
@@ -118,7 +118,7 @@ class CompoundWordMapper(object):
                     'Instrument' in remi_words[i + 1] and \
                     'Note Velocity' in remi_words[i + 2] and \
                     'Note Name' in remi_words[i + 3] and \
-                    'Octave' in remi_words[i + 4] and \
+                    'Note Octave' in remi_words[i + 4] and \
                     'Note Duration' in remi_words[i + 5]:
 
                 current_position = map_word(dictionary.wtd[remi_words[i]], self.position_offset)
