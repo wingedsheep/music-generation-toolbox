@@ -20,8 +20,6 @@ class ToMidiMapper(object):
     def to_midi(self, data: []):
         words = list(map(lambda x: self.dictionary.data_to_word(x), data))
 
-        print(words)
-
         events: [Event] = self.words_to_events(words)
 
         # get downbeat and note (no time)
