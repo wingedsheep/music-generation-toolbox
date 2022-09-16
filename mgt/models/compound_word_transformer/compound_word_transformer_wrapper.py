@@ -74,9 +74,10 @@ class CompoundWordTransformerWrapper(nn.Module):
                 96,  # Bar / Beat
                 128,  # Tempo
                 512,  # Instrument
-                512,  # Pitch
+                512,  # Note Name
+                128,  # Octave
                 128,  # Duration
-                128,  # Velocity
+                128  # Velocity
             ]
 
         self.emb_sizes = emb_sizes
@@ -91,18 +92,20 @@ class CompoundWordTransformerWrapper(nn.Module):
         self.word_emb_barbeat = CompoundTransformerEmbeddings(self.num_tokens[1], self.emb_sizes[1])
         self.word_emb_tempo = CompoundTransformerEmbeddings(self.num_tokens[2], self.emb_sizes[2])
         self.word_emb_instrument = CompoundTransformerEmbeddings(self.num_tokens[3], self.emb_sizes[3])
-        self.word_emb_pitch = CompoundTransformerEmbeddings(self.num_tokens[4], self.emb_sizes[4])
-        self.word_emb_duration = CompoundTransformerEmbeddings(self.num_tokens[5], self.emb_sizes[5])
-        self.word_emb_velocity = CompoundTransformerEmbeddings(self.num_tokens[6], self.emb_sizes[6])
+        self.word_emb_note_name = CompoundTransformerEmbeddings(self.num_tokens[4], self.emb_sizes[4])
+        self.word_emb_octave = CompoundTransformerEmbeddings(self.num_tokens[5], self.emb_sizes[5])
+        self.word_emb_duration = CompoundTransformerEmbeddings(self.num_tokens[6], self.emb_sizes[6])
+        self.word_emb_velocity = CompoundTransformerEmbeddings(self.num_tokens[7], self.emb_sizes[7])
 
         # individual output
         self.proj_type = nn.Linear(dim, self.num_tokens[0])
         self.proj_barbeat = nn.Linear(dim, self.num_tokens[1])
         self.proj_tempo = nn.Linear(dim, self.num_tokens[2])
         self.proj_instrument = nn.Linear(dim, self.num_tokens[3])
-        self.proj_pitch = nn.Linear(dim, self.num_tokens[4])
-        self.proj_duration = nn.Linear(dim, self.num_tokens[5])
-        self.proj_velocity = nn.Linear(dim, self.num_tokens[6])
+        self.proj_note_name = nn.Linear(dim, self.num_tokens[4])
+        self.proj_octave = nn.Linear(dim, self.num_tokens[5])
+        self.proj_duration = nn.Linear(dim, self.num_tokens[6])
+        self.proj_velocity = nn.Linear(dim, self.num_tokens[7])
 
         # in_features is equal to dimension plus dimensions of the type embedding
         self.project_concat_type = nn.Linear(dim + self.emb_sizes[0], dim)
@@ -126,7 +129,8 @@ class CompoundWordTransformerWrapper(nn.Module):
         nn.init.normal_(self.word_emb_barbeat.weight(), std=0.02)
         nn.init.normal_(self.word_emb_tempo.weight(), std=0.02)
         nn.init.normal_(self.word_emb_instrument.weight(), std=0.02)
-        nn.init.normal_(self.word_emb_pitch.weight(), std=0.02)
+        nn.init.normal_(self.word_emb_note_name.weight(), std=0.02)
+        nn.init.normal_(self.word_emb_octave.weight(), std=0.02)
         nn.init.normal_(self.word_emb_duration.weight(), std=0.02)
         nn.init.normal_(self.word_emb_velocity.weight(), std=0.02)
 
@@ -157,7 +161,8 @@ class CompoundWordTransformerWrapper(nn.Module):
         proj_barbeat = self.proj_barbeat(y_)
         proj_tempo = self.proj_tempo(y_)
         proj_instrument = self.proj_instrument(y_)
-        proj_pitch = self.proj_pitch(y_)
+        proj_note_name = self.proj_note_name(y_)
+        proj_octave = self.proj_octave(y_)
         proj_duration = self.proj_duration(y_)
         proj_velocity = self.proj_velocity(y_)
 
@@ -177,10 +182,16 @@ class CompoundWordTransformerWrapper(nn.Module):
             probability_treshold=selection_probability_tresholds.get(3, None),
             temperature=selection_temperatures.get(3, 1.0))
 
-        cur_word_pitch = sampling(
-            proj_pitch,
+        cur_word_note_name = sampling(
+            proj_note_name,
             probability_treshold=selection_probability_tresholds.get(4, None),
             temperature=selection_temperatures.get(4, 1.0))
+
+        cur_word_octave = sampling(
+            proj_octave,
+            probability_treshold=selection_probability_tresholds.get(4, None),
+            temperature=selection_temperatures.get(4, 1.0))
+
         cur_word_duration = sampling(
             proj_duration,
             probability_treshold=selection_probability_tresholds.get(5, None),
@@ -197,7 +208,8 @@ class CompoundWordTransformerWrapper(nn.Module):
             cur_word_barbeat,
             cur_word_tempo,
             cur_word_instrument,
-            cur_word_pitch,
+            cur_word_note_name,
+            cur_word_octave,
             cur_word_duration,
             cur_word_velocity
         ])
@@ -215,11 +227,12 @@ class CompoundWordTransformerWrapper(nn.Module):
         proj_barbeat = self.proj_barbeat(y_)
         proj_tempo = self.proj_tempo(y_)
         proj_instrument = self.proj_instrument(y_)
-        proj_pitch = self.proj_pitch(y_)
+        proj_note_name = self.proj_note_name(y_)
+        proj_octave = self.proj_octave(y_)
         proj_duration = self.proj_duration(y_)
         proj_velocity = self.proj_velocity(y_)
 
-        return proj_barbeat, proj_tempo, proj_instrument, proj_pitch, proj_duration, proj_velocity
+        return proj_barbeat, proj_tempo, proj_instrument, proj_note_name, proj_octave, proj_duration, proj_velocity
 
     def forward_hidden(
             self,
@@ -232,9 +245,10 @@ class CompoundWordTransformerWrapper(nn.Module):
         emb_barbeat = self.word_emb_barbeat(x[..., 1])
         emb_tempo = self.word_emb_tempo(x[..., 2])
         emb_instrument = self.word_emb_instrument(x[..., 3])
-        emb_pitch = self.word_emb_pitch(x[..., 4])
-        emb_duration = self.word_emb_duration(x[..., 5])
-        emb_velocity = self.word_emb_velocity(x[..., 6])
+        emb_note_name = self.word_emb_note_name(x[..., 4])
+        emb_octave = self.word_emb_octave(x[..., 5])
+        emb_duration = self.word_emb_duration(x[..., 6])
+        emb_velocity = self.word_emb_velocity(x[..., 7])
 
         embs = torch.cat(
             [
@@ -242,7 +256,8 @@ class CompoundWordTransformerWrapper(nn.Module):
                 emb_barbeat,
                 emb_tempo,
                 emb_instrument,
-                emb_pitch,
+                emb_note_name,
+                emb_octave,
                 emb_duration,
                 emb_velocity
             ], dim=-1)

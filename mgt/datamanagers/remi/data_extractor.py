@@ -16,11 +16,13 @@ class DataExtractor(object):
             dictionary: Dictionary,
             map_tracks_to_instruments: {},
             use_chords: bool,
+            use_note_name: bool,
             instrument_mapping: {}
     ):
         self.dictionary = dictionary
         self.map_tracks_to_instruments = map_tracks_to_instruments
         self.use_chords = use_chords
+        self.use_note_name = use_note_name
         self.instrument_mapping = instrument_mapping
 
     def extract_data(self, path: str, transposition_steps: int):
@@ -209,11 +211,28 @@ class DataExtractor(object):
                         value=velocity_index,
                         text='{}/{}'.format(item.velocity, DEFAULT_VELOCITY_BINS[velocity_index])))
                     # pitch
-                    events.append(Event(
-                        name='Note On',
-                        time=item.start,
-                        value=item.pitch,
-                        text='{}'.format(item.pitch)))
+                    if self.use_note_name:
+                        note_name = self.pitch_to_note_name(item.pitch)
+                        octave = self.pitch_to_octave(item.pitch)
+
+                        events.append(Event(
+                            name='Note Name',
+                            time=item.start,
+                            value=note_name,
+                            text='{}'.format(note_name)))
+
+                        events.append(Event(
+                            name='Note Octave',
+                            time=item.start,
+                            value=octave,
+                            text='{}'.format(octave)))
+                    else:
+                        events.append(Event(
+                            name='Note On',
+                            time=item.start,
+                            value=item.pitch,
+                            text='{}'.format(item.pitch)))
+
                     # duration
                     duration = item.end - item.start
                     index = np.argmin(abs(DEFAULT_DURATION_BINS - duration))
@@ -251,3 +270,12 @@ class DataExtractor(object):
                     events.append(tempo_style)
                     events.append(tempo_value)
         return events
+
+    def pitch_to_note_name(self, pitch):
+        note_names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+        note_index = pitch % 12
+        return note_names[note_index]
+
+    def pitch_to_octave(self, pitch):
+        octave = int((pitch / 12) - 1)
+        return octave

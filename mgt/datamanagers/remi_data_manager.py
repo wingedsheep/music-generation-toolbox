@@ -9,6 +9,7 @@ from mgt.datamanagers.remi.to_midi_mapper import ToMidiMapper
 
 defaults = {
     'use_chords': False,
+    'use_note_name': True,
     'transposition_steps': [0],
     'map_tracks_to_instruments': {},
     'instrument_mapping': {},
@@ -32,12 +33,14 @@ class RemiDataManager(DataManager):
     def __init__(
             self,
             use_chords=defaults['use_chords'],
+            use_note_name=defaults['use_note_name'],
             transposition_steps=defaults['transposition_steps'],
             map_tracks_to_instruments=defaults['map_tracks_to_instruments'],
             instrument_mapping=defaults['instrument_mapping'],
             efficient_remi_config=defaults['efficient_remi_config']
     ):
         self.use_chords = use_chords
+        self.use_note_name = use_note_name
         self.transposition_steps = transposition_steps
         self.map_tracks_to_instruments = map_tracks_to_instruments
         self.instrument_mapping = instrument_mapping
@@ -46,6 +49,7 @@ class RemiDataManager(DataManager):
             dictionary=self.dictionary,
             map_tracks_to_instruments=self.map_tracks_to_instruments,
             use_chords=self.use_chords,
+            use_note_name=self.use_note_name,
             instrument_mapping=self.instrument_mapping
         )
         self.efficient_remi_config = efficient_remi_config

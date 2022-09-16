@@ -66,4 +66,11 @@ class DictionaryGenerator(object):
         for i in range(64):
             append_to_dictionary(f"Tempo Value_{i}")
 
+        note_names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+        for note_name in note_names:
+            append_to_dictionary(f"Note Name_{note_name}")
+
+        for i in range(10):
+            append_to_dictionary(f"Note Octave_{i}")
+
         return Dictionary(dictionary[0], dictionary[1])

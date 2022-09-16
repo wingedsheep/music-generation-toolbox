@@ -7,6 +7,10 @@ from mgt.datamanagers.remi.constants import DEFAULT_VELOCITY_BINS, DEFAULT_DURAT
 from mgt.datamanagers.remi.event import Event
 
 
+def note_name_and_octave_to_pitch(note_name, octave):
+    return octave * 12 + note_name
+
+
 class ToMidiMapper(object):
 
     def __init__(self, dictionary: Dictionary):
@@ -40,6 +44,29 @@ class ToMidiMapper(object):
                 velocity = int(DEFAULT_VELOCITY_BINS[index])
                 # pitch
                 pitch = int(events[i + 3].value)
+                # duration
+                index = int(events[i + 4].value)
+                duration = DEFAULT_DURATION_BINS[index]
+                # adding
+                temp_notes.append([position, velocity, pitch, duration, instrument])
+            elif i + 5 < len(events) and events[i].name == 'Position' and \
+                    events[i + 1].name == 'Instrument' and \
+                    events[i + 2].name == 'Note Velocity' and \
+                    events[i + 3].name == 'Note Name' and \
+                    events[i + 4].name == 'Octave' and \
+                    events[i + 5].name == 'Note Duration':
+
+                # start time and end time from position
+                position = int(events[i].value.split('/')[0]) - 1
+                # instrument
+                instrument = int(events[i + 1].value)
+                # velocity
+                index = int(events[i + 2].value)
+                velocity = int(DEFAULT_VELOCITY_BINS[index])
+                # pitch
+                note_name = int(events[i + 3].value)
+                octave = int(events[i + 4].value)
+                pitch = note_name_and_octave_to_pitch(note_name, octave)
                 # duration
                 index = int(events[i + 4].value)
                 duration = DEFAULT_DURATION_BINS[index]
