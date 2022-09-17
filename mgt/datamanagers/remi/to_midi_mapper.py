@@ -88,6 +88,7 @@ class ToMidiMapper(object):
                 elif events[i + 1].value == 'fast':
                     tempo = DEFAULT_TEMPO_INTERVALS[2].start + int(events[i + 2].value)
                 temp_tempos.append([position, tempo])
+
         # get specific time for notes
         ticks_per_beat = DEFAULT_RESOLUTION
         ticks_per_bar = DEFAULT_RESOLUTION * 4  # assume 4/4
