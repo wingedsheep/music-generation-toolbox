@@ -7,7 +7,7 @@ import torch
 import numpy as np
 
 from perceiver_ar_pytorch import PerceiverAR
-from perceiver_ar_pytorch import AutoregressiveWrapper
+from perceiver_ar_pytorch.autoregressive_wrapper import AutoregressiveWrapper
 
 from mgt.datamanagers.data_manager import Dictionary
 from mgt.models import utils
