@@ -11,7 +11,6 @@ from x_transformers import TransformerWrapper, Decoder, AutoregressiveWrapper
 from mgt.datamanagers.data_manager import Dictionary
 from mgt.models import utils
 
-
 defaults = {
     'max_sequence_length': 512,
     'learning_rate': 1e-4,
@@ -142,8 +141,9 @@ class TransformerModel(object):
         }, path)
 
     @staticmethod
-    def load_checkpoint(path) -> TransformerModel:
+    def load_checkpoint(path) -> AutoregressiveWrapper:
         checkpoint = torch.load(path)
+
         model = TransformerModel(
             dictionary=checkpoint['dictionary'],
             max_sequence_length=utils.get_or_default(checkpoint, 'max_sequence_length', defaults),
@@ -156,4 +156,8 @@ class TransformerModel(object):
 
         model.model.load_state_dict(checkpoint['model_state_dict'], strict=False)
 
-        return model
+        return AutoregressiveWrapper(
+            model,
+            ignore_index=0,
+            pad_value=0
+        ).to(utils.get_device())
