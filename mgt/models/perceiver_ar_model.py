@@ -152,7 +152,7 @@ class PerceiverArModel(object):
         }, path)
 
     @staticmethod
-    def load_checkpoint(path) -> PerceiverAR:
+    def load_checkpoint(path) -> PerceiverArModel:
         checkpoint = torch.load(path)
 
         model = PerceiverArModel(
@@ -170,8 +170,4 @@ class PerceiverArModel(object):
 
         model.model.load_state_dict(checkpoint['model_state_dict'], strict=False)
 
-        return AutoregressiveWrapper(
-            model,
-            ignore_index=0,
-            pad_value=0
-        ).to(utils.get_device())
+        return model
