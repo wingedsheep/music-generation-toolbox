@@ -107,7 +107,9 @@ class PerceiverArModel(object):
     def generate(self, output_length=100, temperature=1., filter_treshold=0.9, prompt=None):
         print(f"Generating a new song with {output_length} characters.")
         if prompt is None:
-            prompt = [0]
+            prompt = np.zeros(self.cross_attn_seq_len)
+        elif len(prompt) < self.cross_attn_seq_len:
+            prompt = utils.pad(prompt, self.cross_attn_seq_len, 0)
 
         self.model.eval()
         initial = torch.tensor([prompt]).long().to(utils.get_device())  # assume 0 is start token
