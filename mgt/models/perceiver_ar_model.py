@@ -26,7 +26,7 @@ defaults = {
 }
 
 
-class TransformerModel(object):
+class PerceiverArModel(object):
 
     def __init__(self,
                  dictionary: Dictionary,
