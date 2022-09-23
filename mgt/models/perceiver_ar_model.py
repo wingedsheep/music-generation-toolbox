@@ -126,7 +126,6 @@ class PerceiverArModel(object):
             cross_attn_seq_len=self.cross_attn_seq_len,
             cross_attn_dropout=self.cross_attn_dropout,
         ),
-            ignore_index=0,
             pad_value=0
         ).to(utils.get_device())
 
@@ -156,7 +155,7 @@ class PerceiverArModel(object):
     def load_checkpoint(path) -> PerceiverAR:
         checkpoint = torch.load(path)
 
-        model = PerceiverAR(
+        model = PerceiverArModel(
             dictionary=checkpoint['dictionary'],
             max_sequence_length=utils.get_or_default(checkpoint, 'max_sequence_length', defaults),
             cross_attn_seq_len=utils.get_or_default(checkpoint, 'cross_attn_seq_len', defaults),
