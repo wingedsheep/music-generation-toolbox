@@ -40,7 +40,8 @@ defaults = {
         17,   # Bar / Beat
         192,  # Tempo
         129,  # Instrument
-        128,  # Pitch
+        12,   # Note name
+        9,    # Octave
         64,   # Duration
         32    # Velocity
     ],
@@ -49,7 +50,8 @@ defaults = {
         96,   # Bar / Beat
         128,  # Tempo
         512,  # Instrument
-        512,  # Pitch
+        512,  # Note Name
+        128,  # Octave
         128,  # Duration
         128   # Velocity
     ],

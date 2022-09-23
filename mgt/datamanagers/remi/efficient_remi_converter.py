@@ -43,6 +43,22 @@ class EfficientRemiConverter(object):
                 original_events = [event, events[index + 1], events[index + 2]]
                 position = int(event.value.partition("/")[0])
                 items.append(RemiItem(type=RemiEventType.TEMPO, position=position, original_events=original_events))
+            elif event.name == 'Position' and len(events) > index + 5 and events[index + 1].name == 'Instrument' and events[index + 3].name == 'Note Name':
+                position_event = event
+                instrument_event = events[index + 1]
+                velocity_event = events[index + 2]
+                note_name = events[index + 3]
+                note_octave = events[index + 4]
+                duration_event = events[index + 5]
+                original_events = [position_event, instrument_event, velocity_event, note_name, note_octave,
+                                   duration_event]
+                position = int(position_event.value.partition("/")[0])
+                items.append(RemiItem(
+                    type=RemiEventType.NOTE,
+                    position=position,
+                    instrument=instrument_event.value,
+                    original_events=original_events)
+                )
             elif event.name == 'Position' and len(events) > index + 4 and events[index + 1].name == 'Instrument':
                 position_event = event
                 instrument_event = events[index + 1]
@@ -75,13 +91,13 @@ class EfficientRemiConverter(object):
         for bar_items in items_split_on_bars:
             result.append(RemiItem(type=RemiEventType.BAR, original_events=[Event(name='Bar', value='None', text='1', time=0)]))
             result.extend(self.sort_bar_items(bar_items))
-
         return result
 
     def convert_to_efficient_remi(self, events):
         remi_items = self.convert_to_remi_items(events)
         remi_events = self.convert_back_to_events(remi_items)
-        return list(map(lambda x: '{}_{}'.format(x.name, x.value), remi_events))
+        result = list(map(lambda x: '{}_{}'.format(x.name, x.value), remi_events))
+        return result
 
     def convert_to_normal_remi(self, efficient_remi_words):
         result = []
@@ -99,6 +115,12 @@ class EfficientRemiConverter(object):
 
             if self.config.remove_velocity:
                 if word.startswith('Note On'):
+                    if index < 1 or not result[-1].startswith('Instrument'):
+                        result.append(f'Instrument_{last_instrument}')
+                    if index < 2 or not result[-2].startswith('Position'):
+                        result.insert(-1, f'Position_{last_position}')
+                    result.append("Note Velocity_30")  # Default velocity of 30
+                if word.startswith('Note Name'):
                     if index < 1 or not result[-1].startswith('Instrument'):
                         result.append(f'Instrument_{last_instrument}')
                     if index < 2 or not result[-2].startswith('Position'):

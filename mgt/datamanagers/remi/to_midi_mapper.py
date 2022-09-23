@@ -7,6 +7,11 @@ from mgt.datamanagers.remi.constants import DEFAULT_VELOCITY_BINS, DEFAULT_DURAT
 from mgt.datamanagers.remi.event import Event
 
 
+def note_name_and_octave_to_pitch(note_name, octave):
+    note_names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+    return octave * 12 + note_names.index(note_name)
+
+
 class ToMidiMapper(object):
 
     def __init__(self, dictionary: Dictionary):
@@ -14,6 +19,7 @@ class ToMidiMapper(object):
 
     def to_midi(self, data: []):
         words = list(map(lambda x: self.dictionary.data_to_word(x), data))
+
         events: [Event] = self.words_to_events(words)
 
         # get downbeat and note (no time)
@@ -45,6 +51,29 @@ class ToMidiMapper(object):
                 duration = DEFAULT_DURATION_BINS[index]
                 # adding
                 temp_notes.append([position, velocity, pitch, duration, instrument])
+            elif i + 5 < len(events) and events[i].name == 'Position' and \
+                    events[i + 1].name == 'Instrument' and \
+                    events[i + 2].name == 'Note Velocity' and \
+                    events[i + 3].name == 'Note Name' and \
+                    events[i + 4].name == 'Note Octave' and \
+                    events[i + 5].name == 'Note Duration':
+
+                # start time and end time from position
+                position = int(events[i].value.split('/')[0]) - 1
+                # instrument
+                instrument = int(events[i + 1].value)
+                # velocity
+                index = int(events[i + 2].value)
+                velocity = int(DEFAULT_VELOCITY_BINS[index])
+                # pitch
+                note_name = events[i + 3].value
+                octave = int(events[i + 4].value)
+                pitch = note_name_and_octave_to_pitch(note_name, octave)
+                # duration
+                index = int(events[i + 5].value)
+                duration = DEFAULT_DURATION_BINS[index]
+                # adding
+                temp_notes.append([position, velocity, pitch, duration, instrument])
             elif events[i].name == 'Position' and events[i + 1].name == 'Chord':
                 position = int(events[i].value.split('/')[0]) - 1
                 temp_chords.append([position, events[i + 1].value])
@@ -59,6 +88,7 @@ class ToMidiMapper(object):
                 elif events[i + 1].value == 'fast':
                     tempo = DEFAULT_TEMPO_INTERVALS[2].start + int(events[i + 2].value)
                 temp_tempos.append([position, tempo])
+
         # get specific time for notes
         ticks_per_beat = DEFAULT_RESOLUTION
         ticks_per_bar = DEFAULT_RESOLUTION * 4  # assume 4/4

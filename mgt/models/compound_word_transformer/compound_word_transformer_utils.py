@@ -1,5 +1,5 @@
-COMPOUND_WORD_PADDING = [0, 0, 0, 0, 0, 0, 0]
-COMPOUND_WORD_BAR = [2, 0, 0, 0, 0, 0, 0]
+COMPOUND_WORD_PADDING = [0, 0, 0, 0, 0, 0, 0, 0]
+COMPOUND_WORD_BAR = [2, 0, 0, 0, 0, 0, 0, 0]
 
 
 def pad(array: list, max_sequence_length, padding_character=None):

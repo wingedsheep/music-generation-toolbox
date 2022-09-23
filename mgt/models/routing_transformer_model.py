@@ -118,6 +118,9 @@ class RoutingTransformerModel(object):
         if prompt is None:
             prompt = [0]
 
+        if len(prompt) > self.max_sequence_length:
+            prompt = prompt[-self.max_sequence_length:]
+
         self.model.eval()
         initial = torch.tensor([prompt]).long().to(utils.get_device())  # assume 0 is start token
 

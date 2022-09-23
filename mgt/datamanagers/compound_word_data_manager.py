@@ -38,6 +38,7 @@ class CompoundWordDataManager(DataManager):
             dictionary=self.dictionary,
             map_tracks_to_instruments=self.map_tracks_to_instruments,
             use_chords=False,
+            use_note_name=True,
             instrument_mapping=self.instrument_mapping
         )
         self.to_midi_mapper = ToMidiMapper(self.dictionary)
@@ -56,7 +57,7 @@ class CompoundWordDataManager(DataManager):
 
                     training_data.append(compound_data)
                 except Exception as e:
-                    print(e)
+                    print(f"Exception: {e}")
 
         return DataSet(training_data, self.dictionary)
 
