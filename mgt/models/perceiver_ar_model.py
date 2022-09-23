@@ -112,7 +112,12 @@ class PerceiverArModel(object):
         self.model.eval()
         initial = torch.tensor([prompt]).long().to(utils.get_device())  # assume 0 is start token
 
-        sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_treshold)
+        sample = self.model.generate(
+            start_tokens=initial,
+            seq_len=output_length,
+            temperature=temperature,
+            filter_thres=filter_treshold
+        )
         return sample.cpu().detach().numpy()[0]
 
     def create_model(self):
