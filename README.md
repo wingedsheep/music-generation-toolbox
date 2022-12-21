@@ -132,7 +132,6 @@ dataset = datamanager.prepare_data(midis)
 
 # Create and train the model
 model = CompoundWordTransformerModel(
-    dictionary=dataset.dictionary,
     max_sequence_length=512
 )
 
