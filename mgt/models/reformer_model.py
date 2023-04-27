@@ -66,7 +66,7 @@ class ReformerModel(object):
                     max_sequence_length=self.max_sequence_length)
 
                 # when training, set return_loss equal to True
-                torch_batch = [torch.tensor(x).long().to(utils.get_device()) for x in batch]
+                torch_batch = torch.tensor(np.array(batch)).long().to(utils.get_device())
 
                 loss = self.model(torch_batch, return_loss=True)
                 loss.backward()

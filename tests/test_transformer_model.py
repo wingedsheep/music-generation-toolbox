@@ -33,7 +33,7 @@ class TestTransformerModel(unittest.TestCase):
         model.train(x_train=x_train, epochs=50, batch_size=6, batches_per_epoch=10, report_per_x_batches=5)
 
         # Generate a song with the same length as the original one
-        generated_song = model.generate(output_length=49, prompt=[dictionary.word_to_data('0')])
+        generated_song = model.generate(output_length=49, prompt=[dictionary.word_to_data('1')])
 
         # Convert the generated song back to tokens
         generated_song_tokens = [dictionary.data_to_word(token) for token in generated_song]

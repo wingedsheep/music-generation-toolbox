@@ -116,7 +116,7 @@ class CompoundWordTransformerModel(object):
                         max_sequence_length=self.max_sequence_length,
                         randomly_truncate=randomly_truncate)
 
-                    torch_batch = torch.tensor(batch).long().to(get_device())
+                    torch_batch = torch.tensor(np.array(batch)).long().to(utils.get_device())
 
                     losses = self.model.train_step(torch_batch)
                     loss = (losses[0] + losses[1] + losses[2] + losses[3] + losses[4] + losses[5] + losses[6]) / 7

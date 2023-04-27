@@ -75,7 +75,7 @@ class PerceiverArModel(object):
                         batch_size=batch_size,
                         max_sequence_length=self.max_sequence_length)
 
-                    torch_batch = torch.tensor(batch).long().to(utils.get_device())
+                    torch_batch = torch.tensor(np.array(batch)).long().to(utils.get_device())
 
                     loss = self.model(torch_batch)
                     loss.backward()
@@ -112,7 +112,7 @@ class PerceiverArModel(object):
             prompt = utils.pad(prompt, self.cross_attn_seq_len + 1, 0)
 
         self.model.eval()
-        initial = torch.tensor([prompt]).long().to(utils.get_device())  # assume 0 is start token
+        initial = torch.tensor(np.array([prompt])).long().to(utils.get_device())
 
         sample = self.model.generate(
             start_tokens=initial,
