@@ -1,14 +1,23 @@
 import random
+from typing import Dict, List, TypeVar
 
 import numpy as np
 import torch
 
+TKey = TypeVar('TKey')
+TValue = TypeVar('TValue')
 
-def get_device():
+
+def get_device() -> torch.device:
+    """
+    Returns the appropriate device for computation (GPU or CPU) based on availability.
+
+    :return: A torch.device object representing the appropriate device.
+    """
     return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def pad(array, max_sequence_length, padding_character=0):
+def pad(array: np.ndarray, max_sequence_length: int, padding_character: int = 0) -> np.ndarray:
     """
     Pads an array with a padding character to a given length.
     Padding is applied to the end of the array.
@@ -24,7 +33,15 @@ def pad(array, max_sequence_length, padding_character=0):
         return np.pad(array, (0, number_of_padding_tokens_to_add), 'constant', constant_values=padding_character)
 
 
-def get_batch(training_data, batch_size, max_sequence_length):
+def get_batch(training_data: List[np.ndarray], batch_size: int, max_sequence_length: int) -> List[np.ndarray]:
+    """
+    Creates a batch of random sequences from the training data, each sequence with a specified length.
+
+    :param training_data: A list of sequences representing the training data.
+    :param batch_size: The number of sequences in the batch.
+    :param max_sequence_length: The length of each sequence in the batch.
+    :return: A list of sequences representing the batch.
+    """
     indices = []
     for i in range(batch_size):
         song_index = random.randint(0, len(training_data) - 1)
@@ -43,25 +60,14 @@ def get_batch(training_data, batch_size, max_sequence_length):
     return sequences
 
 
-def get_long_batch(training_data, batch_size, max_sequence_length, num_segments):
-    long_sequences = []
+def get_or_default(dictionary: Dict[TKey, TValue], key: TKey, defaults: Dict[TKey, TValue]) -> TValue:
+    """
+    Returns the value for the specified key in the dictionary if it exists,
+    otherwise returns the default value for the key.
 
-    for _ in range(batch_size):
-        song_index = random.randint(0, len(training_data) - 1)
-        song_length = len(training_data[song_index])
-
-        segment_length = max_sequence_length * num_segments
-        starting_index = random.randint(0, max(0, song_length - 1))
-
-        ending_index = min(song_length, starting_index + segment_length)
-
-        long_sequence = training_data[song_index][starting_index:ending_index]
-        padded_long_sequence = pad(long_sequence, segment_length)
-
-        long_sequences.append(padded_long_sequence)
-
-    return long_sequences
-
-
-def get_or_default(dictionary: dict, key: str, defaults: dict):
+    :param dictionary: A dictionary containing key-value pairs.
+    :param key: The key to look for in the dictionary.
+    :param defaults: A dictionary containing default values for keys.
+    :return: The value for the specified key, or the default value if the key is not in the dictionary.
+    """
     return dictionary[key] if key in dictionary else defaults[key]
