@@ -47,5 +47,6 @@ class TestGetOrDefault(unittest.TestCase):
         with self.assertRaises(KeyError):
             get_or_default(dictionary, 3, defaults)
 
+
 if __name__ == '__main__':
     unittest.main()
