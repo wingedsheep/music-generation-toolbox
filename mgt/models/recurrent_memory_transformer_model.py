@@ -1,55 +1,51 @@
-from __future__ import annotations
-from datetime import time
-
 import time
 
 import torch
 import numpy as np
-
-from perceiver_ar_pytorch import PerceiverAR
-from perceiver_ar_pytorch.autoregressive_wrapper import AutoregressiveWrapper
-
+from recurrent_memory_transformer_pytorch import RecurrentMemoryTransformer, RecurrentMemoryTransformerWrapper
 from mgt.datamanagers.data_manager import Dictionary
 from mgt.models import utils
 
-
 defaults = {
-    'max_sequence_length': 4096,    # total max sequence length
-    'cross_attn_seq_len': 3072,     # the sequence length in which to attend to, but does not undergo self attention (must be less than max_seq_len)
-    'cross_attn_dropout': 0.5,      # what percentage of the prefix to dropout during training, in paper they had extensive experimentation to show up to 50% dropout helped prevent overfitting
     'learning_rate': 1e-4,
     'dropout': 0.1,
-    'dim': 512,                     # model dimensions
-    'depth': 8,                     # model depth
-    'heads': 8,                     # attention heads
-    'dim_head': 64                  # attention head dimension
+    'dim': 512,
+    'depth': 6,
+    'heads': 8,
+    'num_memory_tokens': 128,
+    'seq_len': 1024,
+    'use_flash_attn': True,
+    'use_xl_memories': True,
+    'xl_mem_len': 512
 }
 
 
-class PerceiverArModel(object):
+class RecurrentMemoryTransformerModel(object):
 
     def __init__(self,
                  dictionary: Dictionary,
-                 max_sequence_length=defaults['max_sequence_length'],
-                 cross_attn_seq_len=defaults['cross_attn_seq_len'],
-                 cross_attn_dropout=defaults['cross_attn_dropout'],
                  learning_rate=defaults['learning_rate'],
                  dropout=defaults['dropout'],
                  dim=defaults['dim'],
                  depth=defaults['depth'],
                  heads=defaults['heads'],
-                 dim_head=defaults['dim_head']
+                 num_memory_tokens=defaults['num_memory_tokens'],
+                 seq_len=defaults['seq_len'],
+                 use_flash_attn=defaults['use_flash_attn'],
+                 use_xl_memories=defaults['use_xl_memories'],
+                 xl_mem_len=defaults['xl_mem_len']
                  ):
         self.dictionary = dictionary
         self.learning_rate = learning_rate
-        self.max_sequence_length = max_sequence_length
-        self.cross_attn_seq_len = cross_attn_seq_len
-        self.cross_attn_dropout = cross_attn_dropout
         self.dropout = dropout
         self.dim = dim
         self.depth = depth
         self.heads = heads
-        self.dim_head = dim_head
+        self.num_memory_tokens = num_memory_tokens
+        self.seq_len = seq_len
+        self.use_flash_attn = use_flash_attn
+        self.use_xl_memories = use_xl_memories
+        self.xl_mem_len = xl_mem_len
         self.model = self.create_model()
         self.optimizer = self.create_optimizer()
 
@@ -58,7 +54,8 @@ class PerceiverArModel(object):
         self.optimizer = self.create_optimizer()
 
     def train(self, x_train, epochs, batch_size=4, stop_loss=None, batches_per_epoch=100, report_per_x_batches=20,
-              gradient_accumulation_steps=1):
+              gradient_accumulation_steps=1, num_segments=8):
+        sequence_length_including_memory = num_segments * self.seq_len
         self.model.train()
         start_time = time.time()
         for epoch in range(epochs):
@@ -73,12 +70,11 @@ class PerceiverArModel(object):
                     batch = utils.get_batch(
                         x_train,
                         batch_size=batch_size,
-                        max_sequence_length=self.max_sequence_length)
+                        max_sequence_length=sequence_length_including_memory)
 
                     torch_batch = torch.tensor(np.array(batch)).long().to(utils.get_device())
 
-                    loss = self.model(torch_batch)
-                    loss.backward()
+                    loss = self.model(torch_batch, memory_replay_backprop=True)
 
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
                 self.optimizer.step()
@@ -107,36 +103,35 @@ class PerceiverArModel(object):
     def generate(self, output_length=100, temperature=1., filter_treshold=0.9, prompt=None):
         print(f"Generating a new song with {output_length} characters.")
         if prompt is None:
-            prompt = np.zeros(self.cross_attn_seq_len + 1)
-        elif len(prompt) < self.cross_attn_seq_len:
-            prompt = utils.pad(prompt, self.cross_attn_seq_len + 1, 0)
+            prompt = [0]
+
+        if not isinstance(self.model, RecurrentMemoryTransformerWrapper):
+            raise ValueError("generate method requires a RecurrentMemoryTransformerWrapper instance")
 
         self.model.eval()
-        initial = torch.tensor(np.array([prompt])).long().to(utils.get_device())
+        initial = torch.tensor([prompt]).long().to(utils.get_device())  # assume 0 is start token
 
-        sample = self.model.generate(
-            start_tokens=initial,
-            seq_len=output_length,
-            temperature=temperature,
-            filter_thres=filter_treshold
-        )
-        return sample.cpu().detach().numpy()[0]
+        generated = self.model.generate(initial, length=output_length, temperature=temperature, filter_thres=filter_treshold)
+
+        return generated.cpu().detach().numpy()[0]
 
     def create_model(self):
-        model = AutoregressiveWrapper(PerceiverAR(
+        model = RecurrentMemoryTransformer(
             num_tokens=self.dictionary.size(),
+            num_memory_tokens=self.num_memory_tokens,
             dim=self.dim,
             depth=self.depth,
-            dim_head=self.dim_head,
             heads=self.heads,
-            max_seq_len=self.max_sequence_length,
-            cross_attn_seq_len=self.cross_attn_seq_len,
-            cross_attn_dropout=self.cross_attn_dropout,
-        ),
-            pad_value=0
-        ).to(utils.get_device())
+            seq_len=self.seq_len,
+            use_flash_attn=self.use_flash_attn,
+            causal=True,
+            dim_head=64,
+            ignore_index=0
+        )
 
-        return model
+        model = RecurrentMemoryTransformerWrapper(model)
+
+        return model.to(utils.get_device())
 
     def create_optimizer(self):
         return torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
@@ -145,34 +140,35 @@ class PerceiverArModel(object):
         print(f'Saving checkpoint {path}')
         torch.save({
             'dictionary': self.dictionary,
-            'max_sequence_length': self.max_sequence_length,
-            'cross_attn_seq_len': self.cross_attn_seq_len,
-            'cross_attn_dropout': self.cross_attn_dropout,
             'learning_rate': self.learning_rate,
             'dropout': self.dropout,
             'dim': self.dim,
             'depth': self.depth,
             'heads': self.heads,
-            'dim_head': self.dim_head,
+            'num_memory_tokens': self.num_memory_tokens,
+            'seq_len': self.seq_len,
+            'use_flash_attn': self.use_flash_attn,
+            'use_xl_memories': self.use_xl_memories,
+            'xl_mem_len': self.xl_mem_len,
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
         }, path)
 
     @staticmethod
-    def load_checkpoint(path) -> PerceiverArModel:
+    def load_checkpoint(path):
         checkpoint = torch.load(path)
-
-        model = PerceiverArModel(
+        model = RecurrentMemoryTransformerModel(
             dictionary=checkpoint['dictionary'],
-            max_sequence_length=utils.get_or_default(checkpoint, 'max_sequence_length', defaults),
-            cross_attn_seq_len=utils.get_or_default(checkpoint, 'cross_attn_seq_len', defaults),
-            cross_attn_dropout=utils.get_or_default(checkpoint, 'cross_attn_dropout', defaults),
             learning_rate=utils.get_or_default(checkpoint, 'learning_rate', defaults),
             dropout=utils.get_or_default(checkpoint, 'dropout', defaults),
             dim=utils.get_or_default(checkpoint, 'dim', defaults),
             depth=utils.get_or_default(checkpoint, 'depth', defaults),
             heads=utils.get_or_default(checkpoint, 'heads', defaults),
-            dim_head=utils.get_or_default(checkpoint, 'dim_head', defaults),
+            num_memory_tokens=utils.get_or_default(checkpoint, 'num_memory_tokens', defaults),
+            seq_len=utils.get_or_default(checkpoint, 'seq_len', defaults),
+            use_flash_attn=utils.get_or_default(checkpoint, 'use_flash_attn', defaults),
+            use_xl_memories=utils.get_or_default(checkpoint, 'use_xl_memories', defaults),
+            xl_mem_len=utils.get_or_default(checkpoint, 'xl_mem_len', defaults)
         )
 
         model.model.load_state_dict(checkpoint['model_state_dict'], strict=False)

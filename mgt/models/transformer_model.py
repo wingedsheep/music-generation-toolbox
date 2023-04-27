@@ -1,13 +1,8 @@
 from __future__ import annotations
-from datetime import time
-
 import time
-
 import torch
 import numpy as np
-
 from x_transformers import TransformerWrapper, Decoder, AutoregressiveWrapper
-
 from mgt.datamanagers.data_manager import Dictionary
 from mgt.models import utils
 
@@ -65,7 +60,7 @@ class TransformerModel(object):
                         batch_size=batch_size,
                         max_sequence_length=self.max_sequence_length)
 
-                    torch_batch = torch.tensor(batch).long().to(utils.get_device())
+                    torch_batch = torch.tensor(np.array(batch)).long().to(utils.get_device())
 
                     loss = self.model(torch_batch)
                     loss.backward()
@@ -94,7 +89,7 @@ class TransformerModel(object):
             running_time = (time.time() - start_time)
             print(f"Loss after epoch {epoch + 1} is {epoch_loss}. Running time: {running_time}")
 
-    def generate(self, output_length=100, temperature=1., filter_treshold=0.9, prompt=None):
+    def generate(self, output_length=100, temperature=1., filter_threshold=0.9, prompt=None):
         print(f"Generating a new song with {output_length} characters.")
         if prompt is None:
             prompt = [0]
@@ -102,7 +97,7 @@ class TransformerModel(object):
         self.model.eval()
         initial = torch.tensor([prompt]).long().to(utils.get_device())  # assume 0 is start token
 
-        sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_treshold)
+        sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_threshold)
         return sample.cpu().detach().numpy()[0]
 
     def create_model(self):

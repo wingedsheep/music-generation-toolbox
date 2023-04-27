@@ -2,7 +2,6 @@ import re
 
 from mgt.datamanagers.data_helper import DataHelper
 from mgt.datamanagers.remi.efficient_remi_config import EfficientRemiConfig
-from mgt.datamanagers.remi.instrument_mappings import simplified_instruments
 from mgt.datamanagers.remi_data_manager import RemiDataManager
 
 from pathlib import Path
