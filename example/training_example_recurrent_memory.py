@@ -15,8 +15,8 @@ datamanager = RemiDataManager()
 dataset = datamanager.prepare_data(midis)
 
 # Create and train the model
-model = RecurrentMemoryTransformerModel(dataset.dictionary)
-model.train(x_train=dataset.data, epochs=50, stop_loss=0.1)
+model = RecurrentMemoryTransformerModel(dataset.dictionary, seq_len=256)
+model.train(x_train=dataset.data, epochs=50, stop_loss=0.1, num_segments=4)
 
 # Generate music
 output = model.generate(1000)

@@ -7,7 +7,6 @@ from mgt.datamanagers.data_manager import Dictionary
 from mgt.models import utils
 
 defaults = {
-    'max_sequence_length': 512,
     'learning_rate': 1e-4,
     'dropout': 0.1,
     'dim': 512,
@@ -25,7 +24,6 @@ class RecurrentMemoryTransformerModel(object):
 
     def __init__(self,
                  dictionary: Dictionary,
-                 max_sequence_length=defaults['max_sequence_length'],
                  learning_rate=defaults['learning_rate'],
                  dropout=defaults['dropout'],
                  dim=defaults['dim'],
@@ -39,7 +37,6 @@ class RecurrentMemoryTransformerModel(object):
                  ):
         self.dictionary = dictionary
         self.learning_rate = learning_rate
-        self.max_sequence_length = max_sequence_length
         self.dropout = dropout
         self.dim = dim
         self.depth = depth
@@ -58,7 +55,7 @@ class RecurrentMemoryTransformerModel(object):
 
     def train(self, x_train, epochs, batch_size=4, stop_loss=None, batches_per_epoch=100, report_per_x_batches=20,
               gradient_accumulation_steps=1, num_segments=8):
-        sequence_length_including_memory = num_segments * self.max_sequence_length
+        sequence_length_including_memory = num_segments * self.seq_len
         self.model.train()
         start_time = time.time()
         for epoch in range(epochs):
@@ -78,7 +75,6 @@ class RecurrentMemoryTransformerModel(object):
                     torch_batch = torch.tensor(np.array(batch)).long().to(utils.get_device())
 
                     loss = self.model(torch_batch, memory_replay_backprop=True)
-                    loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
                 self.optimizer.step()
@@ -138,9 +134,9 @@ class RecurrentMemoryTransformerModel(object):
         )
 
         if self.use_xl_memories:
-            model = RecurrentMemoryTransformerWrapper(model).to(utils.get_device())
+            model = RecurrentMemoryTransformerWrapper(model)
 
-        return model
+        return model.to(utils.get_device())
 
     def create_optimizer(self):
         return torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
@@ -149,7 +145,6 @@ class RecurrentMemoryTransformerModel(object):
         print(f'Saving checkpoint {path}')
         torch.save({
             'dictionary': self.dictionary,
-            'max_sequence_length': self.max_sequence_length,
             'learning_rate': self.learning_rate,
             'dropout': self.dropout,
             'dim': self.dim,
@@ -169,7 +164,6 @@ class RecurrentMemoryTransformerModel(object):
         checkpoint = torch.load(path)
         model = RecurrentMemoryTransformerModel(
             dictionary=checkpoint['dictionary'],
-            max_sequence_length=utils.get_or_default(checkpoint, 'max_sequence_length', defaults),
             learning_rate=utils.get_or_default(checkpoint, 'learning_rate', defaults),
             dropout=utils.get_or_default(checkpoint, 'dropout', defaults),
             dim=utils.get_or_default(checkpoint, 'dim', defaults),
