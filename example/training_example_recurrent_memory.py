@@ -1,8 +1,9 @@
 from mgt.datamanagers.remi_data_manager import RemiDataManager
-from mgt.models.transformer_model import TransformerModel
 
 import os
 import glob
+
+from mgt.models.recurrent_memory_transformer_model import RecurrentMemoryTransformerModel
 
 # Collect the midi paths
 midi_path = '../data/pop/'
@@ -14,7 +15,7 @@ datamanager = RemiDataManager()
 dataset = datamanager.prepare_data(midis)
 
 # Create and train the model
-model = TransformerModel(dataset.dictionary)
+model = RecurrentMemoryTransformerModel(dataset.dictionary)
 model.train(x_train=dataset.data, epochs=50, stop_loss=0.1)
 
 # Generate music
