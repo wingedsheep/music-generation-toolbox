@@ -113,7 +113,7 @@ class RecurrentMemoryTransformerModel(object):
 
         generated = self.model.generate(initial, length=output_length, temperature=temperature, filter_thres=filter_treshold)
 
-        return np.array(generated)
+        return generated.cpu().detach().numpy()[0]
 
     def create_model(self):
         model = RecurrentMemoryTransformer(
