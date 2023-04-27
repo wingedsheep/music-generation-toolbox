@@ -74,7 +74,10 @@ class RecurrentMemoryTransformerModel(object):
 
                     torch_batch = torch.tensor(np.array(batch)).long().to(utils.get_device())
 
-                    loss = self.model(torch_batch, memory_replay_backprop=True)
+                    # Create a mask for padding tokens (0)
+                    mask = (torch.tensor(batch) != 0).to(utils.get_device())
+
+                    loss = self.model(torch_batch, mask=mask, memory_replay_backprop=True)
 
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
                 self.optimizer.step()
