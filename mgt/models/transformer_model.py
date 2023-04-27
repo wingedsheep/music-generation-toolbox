@@ -60,7 +60,7 @@ class TransformerModel(object):
                         batch_size=batch_size,
                         max_sequence_length=self.max_sequence_length)
 
-                    torch_batch = torch.tensor(batch).long().to(utils.get_device())
+                    torch_batch = torch.tensor(np.array(batch)).long().to(utils.get_device())
 
                     loss = self.model(torch_batch)
                     loss.backward()

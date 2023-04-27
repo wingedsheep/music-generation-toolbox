@@ -58,6 +58,7 @@ class RecurrentMemoryTransformerModel(object):
 
     def train(self, x_train, epochs, batch_size=4, stop_loss=None, batches_per_epoch=100, report_per_x_batches=20,
               gradient_accumulation_steps=1, num_segments=8):
+        sequence_length_including_memory = num_segments * self.max_sequence_length
         self.model.train()
         start_time = time.time()
         for epoch in range(epochs):
@@ -69,11 +70,10 @@ class RecurrentMemoryTransformerModel(object):
             for _ in range(batches_per_epoch):
 
                 for _ in range(gradient_accumulation_steps):
-                    batch = utils.get_long_batch(
+                    batch = utils.get_batch(
                         x_train,
                         batch_size=batch_size,
-                        max_sequence_length=self.max_sequence_length,
-                        num_segments=num_segments)
+                        max_sequence_length=sequence_length_including_memory)
 
                     torch_batch = torch.tensor(np.array(batch)).long().to(utils.get_device())
 
