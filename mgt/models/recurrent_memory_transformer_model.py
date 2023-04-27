@@ -105,18 +105,13 @@ class RecurrentMemoryTransformerModel(object):
         if prompt is None:
             prompt = [0]
 
+        if not isinstance(self.model, RecurrentMemoryTransformerWrapper):
+            raise ValueError("generate method requires a RecurrentMemoryTransformerWrapper instance")
+
         self.model.eval()
         initial = torch.tensor([prompt]).long().to(utils.get_device())  # assume 0 is start token
-        mem = None
-        xl_mem = None
-        generated = []
 
-        for _ in range(output_length):
-            logits, mem, xl_mem = self.model(initial, mem, xl_memories=xl_mem)
-            probabilities = torch.softmax(logits / temperature, dim=-1)
-            next_token = torch.multinomial(probabilities[:, -1, :], 1)
-            generated.append(next_token.item())
-            initial = next_token.unsqueeze(0)
+        generated = self.model.generate(initial, length=output_length, temperature=temperature, filter_thres=filter_treshold)
 
         return np.array(generated)
 
