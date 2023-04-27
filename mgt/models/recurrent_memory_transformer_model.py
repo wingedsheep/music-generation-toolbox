@@ -125,11 +125,11 @@ class RecurrentMemoryTransformerModel(object):
             seq_len=self.seq_len,
             use_flash_attn=self.use_flash_attn,
             causal=True,
-            dim_head=64
+            dim_head=64,
+            ignore_index=0
         )
 
-        if self.use_xl_memories:
-            model = RecurrentMemoryTransformerWrapper(model)
+        model = RecurrentMemoryTransformerWrapper(model)
 
         return model.to(utils.get_device())
 
