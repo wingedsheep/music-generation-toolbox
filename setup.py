@@ -1,7 +1,7 @@
 from setuptools import setup, find_namespace_packages
 
 setup(name='music-generation-toolbox',
-      version='0.6.0',
+      version='0.7.0',
       description='Toolbox for generating music',
       author='Vincent Bons',
       url='https://github.com/wingedsheep/music-generation-toolbox',
