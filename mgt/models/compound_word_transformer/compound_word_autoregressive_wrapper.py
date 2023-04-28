@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -9,6 +10,7 @@ from mgt.models.utils import get_device
 
 def type_mask(target):
     return target[..., 0] != 0
+
 
 def calculate_loss(predicted, target, loss_mask):
     trainable_values = torch.sum(loss_mask)
@@ -38,8 +40,8 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
 
         print('------ initiate ------')
         final_res = prompt.copy()
-        padded = pad(final_res[-self.max_seq_len:], self.max_seq_len)
-        input_ = torch.tensor([padded]).long().to(get_device())
+        last_token = final_res[-self.max_seq_len:]
+        input_ = torch.tensor(np.array([last_token])).long().to(get_device())
         h, y_type = self.net.forward_hidden(input_)
 
         print('------ generate ------')
@@ -50,22 +52,23 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
                 y_type[:, -1:, :],
                 selection_temperatures=selection_temperatures,
                 selection_probability_tresholds=selection_probability_tresholds)
+
             final_res.append(next_arr.tolist())
 
             # forward
-            padded = pad(final_res[-self.max_seq_len:], self.max_seq_len)
-            input_ = torch.tensor([padded]).long().to(get_device())
-
+            last_token = final_res[-self.max_seq_len:]
+            input_ = torch.tensor(np.array([last_token])).long().to(get_device())
             h, y_type = self.net.forward_hidden(input_)
 
         return final_res
 
     def train_step(self, x, **kwargs):
-        xi = x[:, :-1]
-        target = x[:, 1:]
+        xi = x[:, :-1, :]
+        target = x[:, 1:, :]
 
         h, proj_type = self.net.forward_hidden(xi, **kwargs)
-        proj_barbeat, proj_tempo, proj_instrument, proj_note_name, proj_octave, proj_duration, proj_velocity = self.net.forward_output(h, target)
+        proj_barbeat, proj_tempo, proj_instrument, proj_note_name, proj_octave, proj_duration, proj_velocity = self.net.forward_output(
+            h, target)
         # Filter padding indices
         type_loss = calculate_loss(proj_type, target[..., 0], type_mask(target))
         barbeat_loss = calculate_loss(proj_barbeat, target[..., 1], type_mask(target))

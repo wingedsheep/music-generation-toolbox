@@ -95,7 +95,7 @@ class TransformerModel(object):
             prompt = [0]
 
         self.model.eval()
-        initial = torch.tensor([prompt]).long().to(utils.get_device())  # assume 0 is start token
+        initial = torch.tensor(np.array([prompt])).long().to(utils.get_device())  # assume 0 is start token
 
         sample = self.model.generate(initial, output_length, temperature=temperature, filter_thres=filter_threshold)
         return sample.cpu().detach().numpy()[0]

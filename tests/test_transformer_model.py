@@ -48,6 +48,9 @@ class TestTransformerModel(unittest.TestCase):
             if generated_song_tokens[i] != expected_token:
                 errors += 1
 
+            if errors > 5:
+                break
+
         self.assertTrue(errors <= 4, f"Generated song has more than 4 errors in subsequent tokens. Errors: {errors}")
         print(f"Generated song has {errors} errors in subsequent tokens.")
 
