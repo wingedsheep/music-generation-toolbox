@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import random
 import time
 
 import numpy as np
@@ -9,29 +8,9 @@ from x_transformers import Decoder
 
 from mgt.models import utils
 from mgt.models.compound_word_transformer.compound_word_autoregressive_wrapper import CompoundWordAutoregressiveWrapper
-from mgt.models.compound_word_transformer.compound_word_transformer_utils import COMPOUND_WORD_BAR, pad, \
-    COMPOUND_WORD_PADDING
+from mgt.models.compound_word_transformer.compound_word_transformer_utils import COMPOUND_WORD_BAR, get_batch
 from mgt.models.compound_word_transformer.compound_word_transformer_wrapper import CompoundWordTransformerWrapper
 from mgt.models.utils import get_device
-
-
-def get_batch(training_data, batch_size, max_sequence_length, randomly_truncate=False):
-    indices = []
-    for i in range(batch_size):
-        song_index = random.randint(0, len(training_data) - 1)
-        starting_index = random.randint(0, len(training_data[song_index]) - 1)
-        indices.append((song_index, starting_index))
-
-    sequences = []
-    for selection in indices:
-        padded_song = pad(training_data[selection[0]], max_sequence_length + len(training_data[selection[0]]))
-        if randomly_truncate:
-            rand_length = random.randint(0, max_sequence_length - 2)
-            for i in range(rand_length):
-                padded_song[i] = COMPOUND_WORD_PADDING
-        sequences.append(padded_song[selection[1]: selection[1] + max_sequence_length + 1])
-
-    return sequences
 
 
 defaults = {
@@ -98,7 +77,6 @@ class CompoundWordTransformerModel(object):
               stop_loss=None,
               batches_per_epoch=100,
               report_per_x_batches=20,
-              randomly_truncate=True,
               gradient_accumulation_steps=1):
         self.model.train()
         start_time = time.time()
@@ -113,13 +91,12 @@ class CompoundWordTransformerModel(object):
                     batch = get_batch(
                         x_train,
                         batch_size=batch_size,
-                        max_sequence_length=self.max_sequence_length,
-                        randomly_truncate=randomly_truncate)
+                        max_sequence_length=self.max_sequence_length)
 
                     torch_batch = torch.tensor(np.array(batch)).long().to(utils.get_device())
 
                     losses = self.model.train_step(torch_batch)
-                    loss = (losses[0] + losses[1] + losses[2] + losses[3] + losses[4] + losses[5] + losses[6]) / 7
+                    loss = sum(losses) / len(losses)
                     loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
