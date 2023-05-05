@@ -92,12 +92,12 @@ class CompoundWordAutoregressiveWrapper(nn.Module):
             h, target)
         # Filter padding indices
         type_loss = calculate_loss(proj_type, target[..., 0], type_mask(target))
-        barbeat_loss = calculate_loss(proj_barbeat, torch.clamp(target[..., 1], max=self.num_tokens[1] - 1), type_mask(target))
-        tempo_loss = calculate_loss(proj_tempo, torch.clamp(target[..., 2], max=self.num_tokens[2] - 1), type_mask(target))
-        instrument_loss = calculate_loss(proj_instrument, torch.clamp(target[..., 3], max=self.num_tokens[3] - 1), type_mask(target))
-        note_name_loss = calculate_loss(proj_note_name, torch.clamp(target[..., 4], max=self.num_tokens[4] - 1), type_mask(target))
-        octave_loss = calculate_loss(proj_octave, torch.clamp(target[..., 5], max=self.num_tokens[5] - 1), type_mask(target))
-        duration_loss = calculate_loss(proj_duration, torch.clamp(target[..., 6], max=self.num_tokens[6] - 1), type_mask(target))
-        velocity_loss = calculate_loss(proj_velocity, torch.clamp(target[..., 7], max=self.num_tokens[7] - 1), type_mask(target))
+        barbeat_loss = calculate_loss(proj_barbeat, torch.clamp(target[..., 1], max=self.net.num_tokens[1] - 1), type_mask(target))
+        tempo_loss = calculate_loss(proj_tempo, torch.clamp(target[..., 2], max=self.net.num_tokens[2] - 1), type_mask(target))
+        instrument_loss = calculate_loss(proj_instrument, torch.clamp(target[..., 3], max=self.net.num_tokens[3] - 1), type_mask(target))
+        note_name_loss = calculate_loss(proj_note_name, torch.clamp(target[..., 4], max=self.net.num_tokens[4] - 1), type_mask(target))
+        octave_loss = calculate_loss(proj_octave, torch.clamp(target[..., 5], max=self.net.num_tokens[5] - 1), type_mask(target))
+        duration_loss = calculate_loss(proj_duration, torch.clamp(target[..., 6], max=self.net.num_tokens[6] - 1), type_mask(target))
+        velocity_loss = calculate_loss(proj_velocity, torch.clamp(target[..., 7], max=self.net.num_tokens[7] - 1), type_mask(target))
 
         return type_loss, barbeat_loss, tempo_loss, instrument_loss, note_name_loss, octave_loss, duration_loss, velocity_loss
