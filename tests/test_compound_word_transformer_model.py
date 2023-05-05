@@ -126,7 +126,7 @@ class TestCompoundWordTransformerModel(unittest.TestCase):
             errors_for_index += first_index_error + other_indices_error
             error_list.append(errors_for_index)
 
-            if errors > 5:
+            if errors >= 5:
                 break
 
         print(error_list)

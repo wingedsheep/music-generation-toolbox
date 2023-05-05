@@ -12,13 +12,34 @@ def type_mask(target):
     return target[..., 0] != 0
 
 
-def calculate_loss(predicted, target, loss_mask):
-    trainable_values = torch.sum(loss_mask)
-    if trainable_values == 0:
-        return 0
+def calculate_loss(logits, targets, loss_mask):
+    """
+    Calculates the cross-entropy loss for the given logits and targets.
+    :param logits: The logits with shape (batch_size, max_sequence_length - 1, classes)
+    :param target: The targets with shape (batch_size, max_sequence_length - 1)
+    :param loss_mask: The loss mask with shape (batch_size, max_sequence_length - 1)
+    :return: The cross-entropy loss
+    """
 
-    loss = F.cross_entropy(predicted[:, ...].permute(0, 2, 1), target, reduction='none')
-    loss = loss * loss_mask
+    trainable_values = torch.sum(loss_mask)
+    if trainable_values.item() == 0:
+        return torch.tensor(0.0, dtype=logits.dtype, device=logits.device)
+
+    # Determine the number of classes from logits
+    _, _, classes = logits.shape
+
+    # Flatten logits and targets and mask using .reshape(...)
+    logits_flattened = logits.reshape(-1, classes)      # Shape: (batch_size * (max_sequence_length - 1), classes)
+    targets_flattened = targets.reshape(-1)             # Shape: (batch_size * (max_sequence_length - 1),)
+    mask_flattened = loss_mask.reshape(-1)              # Shape: (batch_size * (max_sequence_length - 1),)
+
+    # Compute the cross-entropy loss using F.cross_entropy
+    loss = F.cross_entropy(logits_flattened, targets_flattened, reduction='none')
+
+    # Apply the loss mask
+    loss = loss * mask_flattened
+
+    # Divide the loss by the number of trainable values
     loss = torch.sum(loss) / trainable_values
 
     return loss
