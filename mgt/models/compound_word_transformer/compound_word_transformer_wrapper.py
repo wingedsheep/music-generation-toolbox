@@ -246,6 +246,8 @@ class CompoundWordTransformerWrapper(nn.Module):
         emb_tempo = self.word_emb_tempo(x[..., 2])
         emb_instrument = self.word_emb_instrument(x[..., 3])
         emb_note_name = self.word_emb_note_name(x[..., 4])
+        print(x[..., 5].min())
+        print(x[..., 5].max())
         emb_octave = self.word_emb_octave(x[..., 5])
         emb_duration = self.word_emb_duration(x[..., 6])
         emb_velocity = self.word_emb_velocity(x[..., 7])
