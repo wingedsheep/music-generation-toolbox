@@ -242,15 +242,13 @@ class CompoundWordTransformerWrapper(nn.Module):
     ):
         # embeddings
         emb_type = self.word_emb_type(x[..., 0])
-        emb_barbeat = self.word_emb_barbeat(x[..., 1])
-        emb_tempo = self.word_emb_tempo(x[..., 2])
-        emb_instrument = self.word_emb_instrument(x[..., 3])
-        emb_note_name = self.word_emb_note_name(x[..., 4])
-        print(x[..., 5].min())
-        print(x[..., 5].max())
-        emb_octave = self.word_emb_octave(x[..., 5])
-        emb_duration = self.word_emb_duration(x[..., 6])
-        emb_velocity = self.word_emb_velocity(x[..., 7])
+        emb_barbeat = self.word_emb_barbeat(torch.clamp(x[..., 1], max=self.num_tokens[1] - 1))
+        emb_tempo = self.word_emb_tempo(torch.clamp(x[..., 2], max=self.num_tokens[2] - 1))
+        emb_instrument = self.word_emb_instrument(torch.clamp(x[..., 3], max=self.num_tokens[3] - 1))
+        emb_note_name = self.word_emb_note_name(torch.clamp(x[..., 4], max=self.num_tokens[4] - 1))
+        emb_octave = self.word_emb_octave(torch.clamp(x[..., 5], max=self.num_tokens[5] - 1))
+        emb_duration = self.word_emb_duration(torch.clamp(x[..., 6], max=self.num_tokens[6] - 1))
+        emb_velocity = self.word_emb_velocity(torch.clamp(x[..., 7], max=self.num_tokens[7] - 1))
 
         embs = torch.cat(
             [
